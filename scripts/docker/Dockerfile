@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM node:20-bookworm
+FROM node:20.18.3-bookworm-slim
 
 RUN apt-get update \
   && apt-get install -y \
