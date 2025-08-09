@@ -4,6 +4,7 @@ import useTokenDetectionPolling from './useTokenDetectionPolling';
 // eslint-disable-next-line import/no-namespace
 import * as networks from '../../../util/networks';
 import { RootState } from '../../../reducers';
+import { SolScope } from '@metamask/keyring-api';
 
 jest.mock('../../../core/Engine', () => ({
   context: {
@@ -54,6 +55,12 @@ describe('useTokenDetectionPolling', () => {
               ],
             },
           },
+        },
+        MultichainNetworkController: {
+          isEvmSelected: true,
+          selectedMultichainNetworkChainId: SolScope.Mainnet,
+
+          multichainNetworkConfigurationsByChainId: {},
         },
       },
     },
@@ -115,6 +122,31 @@ describe('useTokenDetectionPolling', () => {
     expect(
       mockedTokenDetectionController.stopPollingByPollingToken,
     ).toHaveBeenCalledTimes(0);
+  });
+
+  it('Should not poll when evm is not selected', async () => {
+    renderHookWithProvider(() => useTokenDetectionPolling(), {
+      state: {
+        ...state,
+        engine: {
+          ...state.engine,
+          backgroundState: {
+            ...state.engine.backgroundState,
+            MultichainNetworkController: {
+              ...state.engine.backgroundState.MultichainNetworkController,
+              isEvmSelected: false,
+            },
+          },
+        },
+      },
+    });
+
+    const mockedTokenDetectionController = jest.mocked(
+      Engine.context.TokenDetectionController,
+    );
+    expect(mockedTokenDetectionController.startPolling).toHaveBeenCalledTimes(
+      0,
+    );
   });
 
   it('Should poll with specific chainIds when provided', async () => {
@@ -324,5 +356,31 @@ describe('useTokenDetectionPolling', () => {
     expect(
       mockedTokenDetectionController.stopPollingByPollingToken,
     ).toHaveBeenCalledTimes(1);
+  });
+
+  it('polls with provided chain ids and address', () => {
+    const providedAddress = '0x1234567890abcdef';
+    renderHookWithProvider(
+      () =>
+        useTokenDetectionPolling({
+          chainIds: ['0x1', '0x89'],
+          address: providedAddress,
+        }),
+      {
+        state,
+      },
+    );
+
+    const mockedTokenDetectionController = jest.mocked(
+      Engine.context.TokenDetectionController,
+    );
+
+    expect(mockedTokenDetectionController.startPolling).toHaveBeenNthCalledWith(
+      1,
+      {
+        chainIds: ['0x1', '0x89'],
+        address: providedAddress,
+      },
+    );
   });
 });

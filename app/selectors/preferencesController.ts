@@ -1,7 +1,7 @@
 import { createSelector } from 'reselect';
 import { PreferencesState } from '@metamask/preferences-controller';
 import { RootState } from '../reducers';
-import { selectChainId } from './networkController';
+import { selectEvmChainId } from './networkController';
 import { createDeepEqualSelector } from './util';
 import { Hex } from '@metamask/utils';
 
@@ -59,7 +59,7 @@ export const selectTokenNetworkFilter = createSelector(
 export const selectIsTokenNetworkFilterEqualCurrentNetwork =
   createDeepEqualSelector(
     selectPreferencesControllerState,
-    (state: RootState) => selectChainId(state),
+    (state: RootState) => selectEvmChainId(state),
     (preferencesControllerState: PreferencesState, chainId: Hex) => {
       const tokenNetworkFilter =
         preferencesControllerState.tokenNetworkFilter || {};
@@ -93,16 +93,6 @@ export const selectShowTestNetworks = createSelector(
         showTestNetworks: boolean;
       }
     ).showTestNetworks,
-);
-
-export const selectShowIncomingTransactionNetworks = createSelector(
-  selectPreferencesControllerState,
-  (preferencesControllerState: PreferencesState) =>
-    (
-      preferencesControllerState as PreferencesState & {
-        showIncomingTransactions: { [chainId: string]: boolean };
-      }
-    ).showIncomingTransactions,
 );
 
 export const selectIsIpfsGatewayEnabled = createSelector(
@@ -145,4 +135,30 @@ export const selectPrivacyMode = createSelector(
   selectPreferencesControllerState,
   (preferencesControllerState: PreferencesState) =>
     preferencesControllerState.privacyMode,
+);
+
+export const selectSmartTransactionsMigrationApplied = createSelector(
+  selectPreferencesControllerState,
+  (preferencesControllerState: PreferencesState) =>
+    preferencesControllerState.featureFlags
+      ?.smartTransactionsMigrationApplied ?? false,
+);
+
+export const selectSmartTransactionsBannerDismissed = createSelector(
+  selectPreferencesControllerState,
+  (preferencesControllerState: PreferencesState) =>
+    preferencesControllerState.featureFlags?.smartTransactionsBannerDismissed ??
+    false,
+);
+
+export const selectDismissSmartAccountSuggestionEnabled = createSelector(
+  selectPreferencesControllerState,
+  (preferencesControllerState: PreferencesState) =>
+    preferencesControllerState.dismissSmartAccountSuggestionEnabled ?? false,
+);
+
+export const selectSmartAccountOptIn = createSelector(
+  selectPreferencesControllerState,
+  (preferencesControllerState: PreferencesState) =>
+    preferencesControllerState.smartAccountOptIn ?? false,
 );

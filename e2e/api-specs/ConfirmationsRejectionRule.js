@@ -1,3 +1,4 @@
+/// <reference path="../types/detox.d.ts" />
 import { device } from 'detox';
 import { addToQueue } from './helpers';
 import paramsToObj from '@open-rpc/test-coverage/build/utils/params-to-obj';
@@ -7,6 +8,8 @@ import Gestures from '../utils/Gestures';
 import ConnectBottomSheet from '../pages/Browser/ConnectBottomSheet';
 import AssetWatchBottomSheet from '../pages/Transactions/AssetWatchBottomSheet';
 import SpamFilterModal from '../pages/Browser/SpamFilterModal';
+import BrowserView from '../pages/Browser/BrowserView';
+import ConnectedAccountsModal from '../pages/Browser/ConnectedAccountsModal';
 
 // eslint-disable-next-line import/no-nodejs-modules
 import fs from 'fs';
@@ -24,10 +27,12 @@ export default class ConfirmationsRejectRule {
     this.driver = options.driver; // Pass element for detox instead of all the driver
     this.only = options.only;
     this.allCapsCancel = ['wallet_watchAsset'];
+    this.permissionConnectionSheet = ['wallet_revokePermissions'];
     this.requiresEthAccountsPermission = [
       'personal_sign',
       'eth_signTypedData_v4',
       'eth_getEncryptionPublicKey',
+      'wallet_revokePermissions',
     ];
   }
 
@@ -60,9 +65,6 @@ export default class ConfirmationsRejectRule {
              */
 
             // Connect accounts modal
-            await Assertions.checkIfVisible(
-              PermissionSummaryBottomSheet.container,
-            );
             await ConnectBottomSheet.tapConnectButton();
             await Assertions.checkIfNotVisible(
               PermissionSummaryBottomSheet.container,
@@ -153,6 +155,9 @@ export default class ConfirmationsRejectRule {
           await TestHelpers.delay(3000);
           if (this.allCapsCancel.includes(call.methodName)) {
             await AssetWatchBottomSheet.tapCancelButton();
+          } else if (call.methodName === 'wallet_revokePermissions') {
+            await BrowserView.tapLocalHostDefaultAvatar();
+            await Assertions.checkIfNotVisible(ConnectedAccountsModal.title);
           } else {
             cancelButton = await Matchers.getElementByText('Cancel');
             await Gestures.waitAndTap(cancelButton);

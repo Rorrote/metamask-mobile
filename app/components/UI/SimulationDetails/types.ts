@@ -12,7 +12,7 @@ export enum AssetType {
  * Describes an amount of fiat.
  */
 export const FIAT_UNAVAILABLE = null;
-export type FiatAmountAvailable = number;
+export type FiatAmountAvailable = number | string;
 export type FiatAmount = FiatAmountAvailable | typeof FIAT_UNAVAILABLE;
 
 /**
@@ -75,4 +75,32 @@ export type BalanceChange = Readonly<{
    * The amount of fiat currency that corresponds to the asset amount.
    */
   fiatAmount: FiatAmount;
+
+  /**
+   * Optional field, it is total balance in the account of the ERC20 token
+   */
+  balance?: BigNumber;
+
+  /**
+   * Optional field, number of decimals in the ERC20 token
+   */
+  decimals?: number;
+
+  /**
+   * Optional field, symbol of the ERC20 token
+   */
+  tokenSymbol?: string;
+
+  /**
+   * Optional field is balance change in All Approval
+   */
+  isAllApproval?: boolean;
+
+  /**
+   * Optional field is balance change in Unlimited Approval
+   */
+  isUnlimitedApproval?: boolean;
+
+  /** The amount of USD that corresponds to the asset amount. */
+  usdAmount: FiatAmount;
 }>;

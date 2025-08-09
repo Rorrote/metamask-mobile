@@ -1,4 +1,4 @@
-import { EthAccountType, EthScopes } from '@metamask/keyring-api';
+import { EthAccountType, EthScope } from '@metamask/keyring-api';
 import { InternalAccount } from '@metamask/keyring-internal-api';
 import { isObject, hasProperty } from '@metamask/utils';
 import { captureException } from '@sentry/react-native';
@@ -113,7 +113,7 @@ function createInternalAccountsForAccountsController(
 
     accounts[expectedId] = {
       address: identity.address,
-      scopes: [EthScopes.Namespace],
+      scopes: [EthScope.Eoa],
       id: expectedId,
       options: {},
       metadata: {
@@ -170,7 +170,15 @@ function createSelectedAccountForAccountsController(
       state.engine.backgroundState.PreferencesController?.identities,
     );
     const internalAccount = findInternalAccountByAddress(state, firstAddress);
+
     if (internalAccount) {
+      if (internalAccount.id === undefined) {
+        captureException(
+          new Error(
+            `Migration 36: selectedAccount will be undefined because internalAccount.id is undefined.`,
+          ),
+        );
+      }
       state.engine.backgroundState.AccountsController.internalAccounts.selectedAccount =
         internalAccount.id;
       state.engine.backgroundState.PreferencesController.selectedAddress =
@@ -181,6 +189,13 @@ function createSelectedAccountForAccountsController(
 
   const selectedAccount = findInternalAccountByAddress(state, selectedAddress);
   if (selectedAccount) {
+    if (selectedAccount.id === undefined) {
+      captureException(
+        new Error(
+          `Migration 36: selectedAccount will be undefined because selectedAccount.id is undefined.`,
+        ),
+      );
+    }
     state.engine.backgroundState.AccountsController.internalAccounts.selectedAccount =
       selectedAccount.id;
   }

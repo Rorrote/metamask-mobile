@@ -25,22 +25,22 @@ import {
   getIsSwapApproveOrSwapTransaction,
   isApprovalTransaction,
 } from '../../../util/transactions';
-import { BN } from 'ethereumjs-util';
+import BN from 'bnjs4';
 import Logger from '../../../util/Logger';
 import TransactionTypes from '../../../core/TransactionTypes';
 import { swapsUtils } from '@metamask/swaps-controller';
 import { query } from '@metamask/controller-utils';
 import BigNumber from 'bignumber.js';
-import { toLowerCaseEquals } from '../../../util/general';
 import { KEYSTONE_TX_CANCELED } from '../../../constants/error';
 import { MetaMetricsEvents } from '../../../core/Analytics';
 import {
   getAddressAccountType,
   isHardwareAccount,
+  areAddressesEqual,
 } from '../../../util/address';
 
 import {
-  selectChainId,
+  selectEvmChainId,
   selectProviderType,
 } from '../../../selectors/networkController';
 import WatchAssetApproval from '../../Approvals/WatchAssetApproval';
@@ -62,7 +62,7 @@ import { getDeviceId } from '../../../core/Ledger/Ledger';
 import { selectSelectedInternalAccountFormattedAddress } from '../../../selectors/accountsController';
 import { createLedgerTransactionModalNavDetails } from '../../UI/LedgerModals/LedgerTransactionModal';
 import ExtendedKeyringTypes from '../../../constants/keyringTypes';
-import Confirm from '../../../components/Views/confirmations/Confirm';
+import { ConfirmRoot } from '../../../components/Views/confirmations/components/confirm';
 import { useMetrics } from '../../../components/hooks/useMetrics';
 import { selectShouldUseSmartTransaction } from '../../../selectors/smartTransactionsController';
 import { STX_NO_HASH_ERROR } from '../../../util/smart-transactions/smart-publish-hook';
@@ -74,9 +74,11 @@ import { updateSwapsTransaction } from '../../../util/swaps/swaps-transactions';
 ///: BEGIN:ONLY_INCLUDE_IF(preinstalled-snaps,external-snaps)
 import InstallSnapApproval from '../../Approvals/InstallSnapApproval';
 import { getGlobalEthQuery } from '../../../util/networks/global-network';
+import SnapDialogApproval from '../../Snaps/SnapDialogApproval/SnapDialogApproval';
 ///: END:ONLY_INCLUDE_IF
 ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
 import SnapAccountCustomNameApproval from '../../Approvals/SnapAccountCustomNameApproval';
+import { getIsBridgeTransaction } from '../../UI/Bridge/utils/transaction';
 ///: END:ONLY_INCLUDE_IF
 
 const hstInterface = new ethers.utils.Interface(abi);
@@ -239,6 +241,7 @@ const RootRPCMethodsUI = (props) => {
           quote_vs_executionRatio: quoteVsExecutionRatio,
           token_to_amount_received: tokenToAmountReceived.toString(),
           is_smart_transaction: props.shouldUseSmartTransaction,
+          gas_included: analyticsParams.isGasIncludedTrade,
           ...smartTransactionMetricsProperties,
           available_quotes: analyticsParams.available_quotes,
           best_quote_source: analyticsParams.best_quote_source,
@@ -335,7 +338,7 @@ const RootRPCMethodsUI = (props) => {
               transactionId: transactionMeta.id,
               deviceId,
               // eslint-disable-next-line no-empty-function
-              onConfirmationComplete: () => { },
+              onConfirmationComplete: () => {},
               type: 'signTransaction',
             }),
           );
@@ -387,7 +390,8 @@ const RootRPCMethodsUI = (props) => {
           transactionMeta.origin,
           to,
           props.chainId,
-        )
+        ) ||
+        getIsBridgeTransaction(transactionMeta)
       ) {
         autoSign(transactionMeta);
       } else {
@@ -405,10 +409,11 @@ const RootRPCMethodsUI = (props) => {
           data &&
           data !== '0x' &&
           to &&
-          (await getMethodData(data, networkClientId)).name === TOKEN_METHOD_TRANSFER
+          (await getMethodData(data, networkClientId)).name ===
+            TOKEN_METHOD_TRANSFER
         ) {
           let asset = props.tokens.find(({ address }) =>
-            toLowerCaseEquals(address, to),
+            areAddressesEqual(address, to),
           );
           if (!asset) {
             // try to lookup contract by lowercased address `to`
@@ -507,15 +512,15 @@ const RootRPCMethodsUI = (props) => {
     initializeWalletConnect();
 
     return function cleanup() {
-      Engine.context.TokensController.hub.removeAllListeners();
-      WalletConnect.hub.removeAllListeners();
+      Engine.context.TokensController?.hub?.removeAllListeners();
+      WalletConnect?.hub?.removeAllListeners();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <React.Fragment>
-      <Confirm />
+      <ConfirmRoot />
       <SignatureApproval />
       <WalletConnectApproval />
       <TransactionApproval
@@ -534,6 +539,7 @@ const RootRPCMethodsUI = (props) => {
         ///: BEGIN:ONLY_INCLUDE_IF(preinstalled-snaps,external-snaps)
       }
       <InstallSnapApproval />
+      <SnapDialogApproval />
       {
         ///: END:ONLY_INCLUDE_IF
       }
@@ -581,10 +587,13 @@ RootRPCMethodsUI.propTypes = {
 
 const mapStateToProps = (state) => ({
   selectedAddress: selectSelectedInternalAccountFormattedAddress(state),
-  chainId: selectChainId(state),
+  chainId: selectEvmChainId(state),
   tokens: selectTokens(state),
   providerType: selectProviderType(state),
-  shouldUseSmartTransaction: selectShouldUseSmartTransaction(state),
+  shouldUseSmartTransaction: selectShouldUseSmartTransaction(
+    state,
+    selectEvmChainId(state),
+  ),
 });
 
 const mapDispatchToProps = (dispatch) => ({

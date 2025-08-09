@@ -19,6 +19,10 @@ import { distributeDataPoints } from '../PriceChart/utils';
 import styleSheet from './Price.styles';
 import { TokenOverviewSelectorsIDs } from '../../../../../e2e/selectors/wallet/TokenOverview.selectors';
 import { TokenI } from '../../Tokens/types';
+///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+import { CaipAssetType } from '@metamask/utils';
+import { AssetConversion } from '@metamask/snaps-sdk';
+///: END:ONLY_INCLUDE_IF
 
 interface PriceProps {
   asset: TokenI;
@@ -29,6 +33,10 @@ interface PriceProps {
   comparePrice: number;
   isLoading: boolean;
   timePeriod: TimePeriod;
+  ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+  multichainAssetsRates: Record<CaipAssetType, AssetConversion>;
+  ///: END:ONLY_INCLUDE_IF
+  isEvmAssetSelected: boolean;
 }
 
 const Price = ({
@@ -40,7 +48,21 @@ const Price = ({
   comparePrice,
   isLoading,
   timePeriod,
+  ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+  multichainAssetsRates,
+  ///: END:ONLY_INCLUDE_IF
+  isEvmAssetSelected,
 }: PriceProps) => {
+  ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+  const assetAddress = asset.address;
+  const isCaipAssetType = assetAddress.startsWith(`${asset.chainId}`);
+  const normalizedCaipAssetTypeAddress = isCaipAssetType
+    ? assetAddress
+    : `${asset.chainId}/token:${asset.address}`;
+  const multichainAssetRates =
+    multichainAssetsRates[normalizedCaipAssetTypeAddress as CaipAssetType];
+  ///: END:ONLY_INCLUDE_IF
+
   const [activeChartIndex, setActiveChartIndex] = useState<number>(-1);
 
   const distributedPriceData = useMemo(() => {
@@ -62,19 +84,22 @@ const Price = ({
     '3m': strings('asset_overview.chart_time_period.3m'),
     '1y': strings('asset_overview.chart_time_period.1y'),
     '3y': strings('asset_overview.chart_time_period.3y'),
+    all: strings('asset_overview.chart_time_period.all'),
   };
 
-  const price: number =
-    distributedPriceData[activeChartIndex]?.[1] || currentPrice;
+  const price: number = isEvmAssetSelected
+    ? distributedPriceData[activeChartIndex]?.[1] || currentPrice
+    : Number(multichainAssetRates?.rate);
+
   const date: string | undefined = distributedPriceData[activeChartIndex]?.[0]
-    ? toDateFormat(distributedPriceData[activeChartIndex]?.[0])
+    ? toDateFormat(Number(distributedPriceData[activeChartIndex]?.[0]))
     : timePeriodTextDict[timePeriod];
 
   const diff: number | undefined = distributedPriceData[activeChartIndex]?.[1]
     ? distributedPriceData[activeChartIndex]?.[1] - comparePrice
     : priceDiff;
 
-  const { styles } = useStyles(styleSheet, { priceDiff: diff });
+  const { styles, theme } = useStyles(styleSheet, { priceDiff: diff });
   const ticker = asset.ticker || asset.symbol;
   return (
     <>
@@ -96,7 +121,10 @@ const Price = ({
           >
             {isLoading ? (
               <View style={styles.loadingPrice}>
-                <SkeletonPlaceholder>
+                <SkeletonPlaceholder
+                  backgroundColor={theme.colors.background.section}
+                  highlightColor={theme.colors.background.subsection}
+                >
                   <SkeletonPlaceholder.Item
                     width={100}
                     height={32}
@@ -112,7 +140,10 @@ const Price = ({
         <Text>
           {isLoading ? (
             <View testID="loading-price-diff" style={styles.loadingPriceDiff}>
-              <SkeletonPlaceholder>
+              <SkeletonPlaceholder
+                backgroundColor={theme.colors.background.section}
+                highlightColor={theme.colors.background.subsection}
+              >
                 <SkeletonPlaceholder.Item
                   width={150}
                   height={18}
@@ -140,6 +171,7 @@ const Price = ({
               {diff === 0 ? '0' : ((diff / comparePrice) * 100).toFixed(2)}
               %){' '}
               <Text
+                testID="price-label"
                 color={TextColor.Alternative}
                 variant={TextVariant.BodyMDMedium}
               >

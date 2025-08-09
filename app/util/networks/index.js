@@ -1,5 +1,5 @@
 import URL from 'url-parse';
-import networksWithImages from 'images/image-icons';
+import networksWithImages from '.././../images/image-icons';
 import {
   MAINNET,
   NETWORKS_CHAIN_ID,
@@ -8,24 +8,26 @@ import {
   LINEA_GOERLI,
   LINEA_MAINNET,
   LINEA_SEPOLIA,
+  MEGAETH_TESTNET,
+  MONAD_TESTNET,
+  BASE_MAINNET,
 } from '../../../app/constants/network';
 import { NetworkSwitchErrorType } from '../../../app/constants/error';
-import { ChainId, NetworkType, toHex } from '@metamask/controller-utils';
+import {
+  BlockExplorerUrl,
+  ChainId,
+  NetworkType,
+  toHex,
+} from '@metamask/controller-utils';
 import { toLowerCaseEquals } from '../general';
 import { fastSplit } from '../number';
 import { regex } from '../../../app/util/regex';
-
-/* eslint-disable */
-const ethLogo = require('../../images/eth-logo-new.png');
-const sepoliaLogo = require('../../images/sepolia-logo-dark.png');
-const lineaTestnetLogo = require('../../images/linea-testnet-logo.png');
-const lineaMainnetLogo = require('../../images/linea-mainnet-logo.png');
-
-/* eslint-enable */
+import { MULTICHAIN_NETWORK_BLOCK_EXPLORER_FORMAT_URLS_MAP } from '../../../app/core/Multichain/constants';
 import {
   PopularList,
   UnpopularNetworkList,
   CustomNetworkImgMapping,
+  getNonEvmNetworkImageSourceByChainId,
 } from './customNetworks';
 import { strings } from '../../../locales/i18n';
 import {
@@ -40,7 +42,22 @@ import {
   MAINNET_BLOCK_EXPLORER,
   SEPOLIA_BLOCK_EXPLORER,
   SEPOLIA_FAUCET,
+  BASE_MAINNET_BLOCK_EXPLORER,
 } from '../../constants/urls';
+import { isNonEvmChainId } from '../../core/Multichain/utils';
+import { SolScope } from '@metamask/keyring-api';
+import { store } from '../../store';
+import {
+  selectSelectedNonEvmNetworkChainId,
+  selectMultichainNetworkControllerState,
+} from '../../selectors/multichainNetworkController';
+import { formatBlockExplorerAddressUrl } from '../../core/Multichain/networks';
+import { CHAIN_IDS } from '@metamask/transaction-controller';
+import {
+  isCaipChainId,
+  KnownCaipNamespace,
+  parseCaipChainId,
+} from '@metamask/utils';
 
 /**
  * List of the supported networks
@@ -60,8 +77,9 @@ export const NetworkList = {
     // eslint-disable-next-line @metamask/design-tokens/color-no-hex
     color: '#3cc29e',
     networkType: 'mainnet',
-    imageSource: ethLogo,
+    imageSource: networksWithImages.ETHEREUM,
     blockExplorerUrl: MAINNET_BLOCK_EXPLORER,
+    isTestNet: false,
   },
   [LINEA_MAINNET]: {
     name: 'Linea Main Network',
@@ -73,8 +91,23 @@ export const NetworkList = {
     // eslint-disable-next-line @metamask/design-tokens/color-no-hex
     color: '#121212',
     networkType: 'linea-mainnet',
-    imageSource: lineaMainnetLogo,
+    imageSource: networksWithImages['LINEA-MAINNET'],
     blockExplorerUrl: LINEA_MAINNET_BLOCK_EXPLORER,
+    isTestNet: false,
+  },
+  [BASE_MAINNET]: {
+    name: 'Base Main Network',
+    shortName: 'Base',
+    networkId: 8453,
+    chainId: toHex('8453'),
+    ticker: 'ETH',
+    // Third party color
+    // eslint-disable-next-line @metamask/design-tokens/color-no-hex
+    color: '#0052FE',
+    networkType: 'base-mainnet',
+    imageSource: networksWithImages.BASE,
+    blockExplorerUrl: BASE_MAINNET_BLOCK_EXPLORER,
+    isTestNet: false,
   },
   [SEPOLIA]: {
     name: 'Sepolia',
@@ -86,8 +119,9 @@ export const NetworkList = {
     // eslint-disable-next-line @metamask/design-tokens/color-no-hex
     color: '#cfb5f0',
     networkType: 'sepolia',
-    imageSource: sepoliaLogo,
+    imageSource: networksWithImages.SEPOLIA,
     blockExplorerUrl: SEPOLIA_BLOCK_EXPLORER,
+    isTestNet: true,
   },
   [LINEA_SEPOLIA]: {
     name: 'Linea Sepolia',
@@ -99,8 +133,37 @@ export const NetworkList = {
     // eslint-disable-next-line @metamask/design-tokens/color-no-hex
     color: '#61dfff',
     networkType: 'linea-sepolia',
-    imageSource: lineaTestnetLogo,
+    imageSource: networksWithImages['LINEA-SEPOLIA'],
     blockExplorerUrl: LINEA_SEPOLIA_BLOCK_EXPLORER,
+    isTestNet: true,
+  },
+  [MEGAETH_TESTNET]: {
+    name: 'Mega Testnet',
+    shortName: 'Mega Testnet',
+    networkId: 6342,
+    chainId: toHex('6342'),
+    ticker: 'MegaETH',
+    // Third party color
+    // eslint-disable-next-line @metamask/design-tokens/color-no-hex
+    color: '#61dfff',
+    networkType: 'megaeth-testnet',
+    imageSource: networksWithImages['MEGAETH-TESTNET'],
+    blockExplorerUrl: BlockExplorerUrl['megaeth-testnet'],
+    isTestNet: true,
+  },
+  [MONAD_TESTNET]: {
+    name: 'Monad Testnet',
+    shortName: 'Monad Testnet',
+    networkId: 10143,
+    chainId: toHex('10143'),
+    ticker: 'MON',
+    // Third party color
+    // eslint-disable-next-line @metamask/design-tokens/color-no-hex
+    color: '#61dfff',
+    networkType: 'monad-testnet',
+    imageSource: networksWithImages['MONAD-TESTNET'],
+    blockExplorerUrl: BlockExplorerUrl['monad-testnet'],
+    isTestNet: true,
   },
   [RPC]: {
     name: 'Private Network',
@@ -114,23 +177,6 @@ export const NetworkList = {
 
 const NetworkListKeys = Object.keys(NetworkList);
 
-export const SECURITY_PROVIDER_SUPPORTED_CHAIN_IDS_FALLBACK_LIST = [
-  NETWORKS_CHAIN_ID.MAINNET,
-  NETWORKS_CHAIN_ID.BSC,
-  NETWORKS_CHAIN_ID.BASE,
-  NETWORKS_CHAIN_ID.POLYGON,
-  NETWORKS_CHAIN_ID.ARBITRUM,
-  NETWORKS_CHAIN_ID.OPTIMISM,
-  NETWORKS_CHAIN_ID.AVAXCCHAIN,
-  NETWORKS_CHAIN_ID.LINEA_MAINNET,
-  NETWORKS_CHAIN_ID.SEPOLIA,
-  NETWORKS_CHAIN_ID.OPBNB,
-  NETWORKS_CHAIN_ID.ZKSYNC_ERA,
-  NETWORKS_CHAIN_ID.SCROLL,
-  NETWORKS_CHAIN_ID.BERACHAIN,
-  NETWORKS_CHAIN_ID.METACHAIN_ONE,
-];
-
 export const BLOCKAID_SUPPORTED_NETWORK_NAMES = {
   [NETWORKS_CHAIN_ID.MAINNET]: 'Ethereum Mainnet',
   [NETWORKS_CHAIN_ID.BSC]: 'Binance Smart Chain',
@@ -143,14 +189,24 @@ export const BLOCKAID_SUPPORTED_NETWORK_NAMES = {
   [NETWORKS_CHAIN_ID.OPBNB]: 'opBNB',
   [NETWORKS_CHAIN_ID.ZKSYNC_ERA]: 'zkSync Era Mainnet',
   [NETWORKS_CHAIN_ID.SCROLL]: 'Scroll',
-  [NETWORKS_CHAIN_ID.BERACHAIN]: 'Berachain Artio',
+  [NETWORKS_CHAIN_ID.BERACHAIN]: 'Berachain',
   [NETWORKS_CHAIN_ID.METACHAIN_ONE]: 'Metachain One Mainnet',
+  [NETWORKS_CHAIN_ID.SEI]: 'Sei Network',
 };
 
 export default NetworkList;
 
 export const getAllNetworks = () =>
   NetworkListKeys.filter((name) => name !== RPC);
+
+export const getMainnetNetworks = () =>
+  getAllNetworks().filter((name) => !NetworkList[name].isTestNet);
+
+export const getTestNetworks = () =>
+  getAllNetworks().filter((name) => NetworkList[name].isTestNet);
+
+export const isMainnetNetwork = (networkType) =>
+  getMainnetNetworks().includes(networkType);
 
 /**
  * Checks if network is default mainnet.
@@ -169,9 +225,25 @@ export const isDefaultMainnet = (networkType) => networkType === MAINNET;
 export const isMainNet = (chainId) => chainId === '0x1';
 
 export const isLineaMainnet = (networkType) => networkType === LINEA_MAINNET;
+export const isLineaMainnetChainId = (chainId) =>
+  chainId === CHAIN_IDS.LINEA_MAINNET;
 
+export const isSolanaMainnet = (chainId) => chainId === SolScope.Mainnet;
+
+/**
+ * Converts a hexadecimal or decimal chain ID to a base 10 number as a string.
+ * If the input is in CAIP-2 format (e.g., `eip155:1` or `eip155:137`), the function returns the input string as is.
+ *
+ * @param chainId - The chain ID to be converted. It can be in hexadecimal, decimal, or CAIP-2 format.
+ * @returns - The chain ID converted to a base 10 number as a string, or the original input if it is in CAIP-2 format.
+ */
 export const getDecimalChainId = (chainId) => {
-  if (!chainId || typeof chainId !== 'string' || !chainId.startsWith('0x')) {
+  if (
+    !chainId ||
+    typeof chainId !== 'string' ||
+    !chainId.startsWith('0x') ||
+    isNonEvmChainId(chainId)
+  ) {
     return chainId;
   }
   return parseInt(chainId, 16).toString(10);
@@ -212,6 +284,12 @@ export const getTestNetImageByChainId = (chainId) => {
   if (NETWORKS_CHAIN_ID.LINEA_SEPOLIA === chainId) {
     return networksWithImages?.['LINEA-SEPOLIA'];
   }
+  if (NETWORKS_CHAIN_ID.MEGAETH_TESTNET === chainId) {
+    return networksWithImages?.['MEGAETH-TESTNET'];
+  }
+  if (NETWORKS_CHAIN_ID.MONAD_TESTNET === chainId) {
+    return networksWithImages?.['MONAD-TESTNET'];
+  }
 };
 
 /**
@@ -222,6 +300,8 @@ export const TESTNET_CHAIN_IDS = [
   ChainId[NetworkType.sepolia],
   ChainId[NetworkType['linea-goerli']],
   ChainId[NetworkType['linea-sepolia']],
+  ChainId[NetworkType['megaeth-testnet']],
+  ChainId[NetworkType['monad-testnet']],
 ];
 
 /**
@@ -300,6 +380,70 @@ export function findBlockExplorerForRpc(rpcTargetUrl, networkConfigurations) {
   }
 
   return undefined;
+}
+
+/**
+ * Returns block explorer for non-evm chain id
+ *
+ * @param {object} internalAccount - Internal account object
+ * @returns {string} - Block explorer url or undefined if not found
+ */
+export function findBlockExplorerForNonEvmChainId(chainId) {
+  const blockExplorerUrls =
+    MULTICHAIN_NETWORK_BLOCK_EXPLORER_FORMAT_URLS_MAP[chainId];
+  return blockExplorerUrls?.url;
+}
+
+/**
+ * Returns block explorer for non-evm account
+ *
+ * @param {object} internalAccount - Internal account object
+ * @returns {string} - Block explorer url or undefined if not found
+ */
+export function findBlockExplorerForNonEvmAccount(internalAccount) {
+  let scope;
+
+  const selectedNonEvmNetworkChainId = selectSelectedNonEvmNetworkChainId(
+    store.getState(),
+  );
+  // Check if the selectedNonEvmNetworkChainId exists in the scopes array
+  if (
+    selectedNonEvmNetworkChainId &&
+    internalAccount.scopes?.includes(selectedNonEvmNetworkChainId)
+  ) {
+    // Prioritize the selected chain ID if it's in the scopes array
+    scope = selectedNonEvmNetworkChainId;
+  } else {
+    // Fall back to a scope that is matching of our networks
+    const nonEvmNetworks = selectMultichainNetworkControllerState(
+      store.getState(),
+    );
+    const networkConfigs =
+      nonEvmNetworks.multichainNetworkConfigurationsByChainId;
+    const matchingNetwork = Object.values(networkConfigs || {}).find(
+      (network) => internalAccount.scopes.includes(network.chainId),
+    );
+
+    if (matchingNetwork) {
+      scope = matchingNetwork.chainId;
+    }
+  }
+  // If we couldn't determine a scope, return undefined
+  if (!scope) {
+    return undefined;
+  }
+
+  const blockExplorerFormatUrls =
+    MULTICHAIN_NETWORK_BLOCK_EXPLORER_FORMAT_URLS_MAP[scope];
+
+  if (!blockExplorerFormatUrls) {
+    return undefined;
+  }
+
+  return formatBlockExplorerAddressUrl(
+    blockExplorerFormatUrls,
+    internalAccount.address,
+  );
 }
 
 /**
@@ -391,14 +535,14 @@ export const getNetworkNameFromProviderConfig = (providerConfig) => {
 };
 
 /**
- * Gets the image source given both the network type and the chain ID.
+ * Gets the image source for an EVM network given both the network type and the Hex chain ID.
  *
  * @param {object} params - Params that contains information about the network.
- * @param {string} params.networkType - Type of network from the provider.
- * @param {string} params.chainId - ChainID of the network.
+ * @param {string=} params.networkType - Type of network from the provider.
+ * @param {string} params.chainId - Hex EVM chain ID of the EVM network.
  * @returns {Object} - Image source of the network.
  */
-export const getNetworkImageSource = ({ networkType, chainId }) => {
+const getEvmNetworkImageSource = ({ networkType, chainId }) => {
   const defaultNetwork = getDefaultNetworkByChainId(chainId);
 
   if (defaultNetwork) {
@@ -422,7 +566,29 @@ export const getNetworkImageSource = ({ networkType, chainId }) => {
   if (customNetworkImg) {
     return customNetworkImg;
   }
+
   return getTestNetImage(networkType);
+};
+
+/**
+ * Gets the image source for a network given both the network type and the Hex EVM chain ID or CaipChainId.
+ *
+ * @param {object} params - Params that contains information about the network.
+ * @param {string=} params.networkType - Type of network from the provider.
+ * @param {string} params.chainId - Hex EVM chain ID or CAIP chain ID of the network.
+ * @returns {Object} - Image source of the network.
+ */
+export const getNetworkImageSource = ({ networkType, chainId }) => {
+  let hexChainId = chainId;
+  if (isCaipChainId(chainId)) {
+    const { namespace, reference } = parseCaipChainId(chainId);
+    if (namespace !== KnownCaipNamespace.Eip155) {
+      return getNonEvmNetworkImageSourceByChainId(chainId);
+    }
+    hexChainId = toHex(reference === '0' ? '1' : reference); // default to mainnet if chainId is 0
+  }
+
+  return getEvmNetworkImageSource({ networkType, chainId: hexChainId });
 };
 
 /**
@@ -488,12 +654,35 @@ export const getBlockExplorerTxUrl = (
 export const getIsNetworkOnboarded = (chainId, networkOnboardedState) =>
   networkOnboardedState[chainId];
 
-export const isChainPermissionsFeatureEnabled = true;
-
 export const isPermissionsSettingsV1Enabled =
   process.env.MM_PERMISSIONS_SETTINGS_V1_ENABLED === 'true';
+
+export const isPerDappSelectedNetworkEnabled = () => true;
 
 export const isPortfolioViewEnabled = () =>
   process.env.PORTFOLIO_VIEW === 'true';
 
-export const isMultichainV1Enabled = () => process.env.MULTICHAIN_V1 === 'true';
+export const isRemoveGlobalNetworkSelectorEnabled = () =>
+  process.env.MM_REMOVE_GLOBAL_NETWORK_SELECTOR === 'true';
+
+// The whitelisted network names for the given chain IDs to prevent showing warnings on Network Settings.
+export const WHILELIST_NETWORK_NAME = {
+  [ChainId.mainnet]: 'Mainnet',
+  [ChainId['linea-mainnet']]: 'Linea Mainnet',
+  [ChainId['megaeth-testnet']]: 'Mega Testnet',
+  [ChainId['monad-testnet']]: 'Monad Testnet',
+};
+
+/**
+ * Checks if the network name is valid for the given chain ID.
+ * This function allows for specific network names for certain chain IDs.
+ * For example, it allows 'Mainnet' for Ethereum Mainnet, 'Linea Mainnet' for Linea Mainnet,
+ * and 'Mega Testnet' for MegaEth Testnet.
+ *
+ * @param {string} chainId - The chain ID to check.
+ * @param {string} networkName - The network name to validate.
+ * @param {string} nickname - The nickname of the network.
+ * @returns A boolean indicating whether the network name is valid for the given chain ID.
+ */
+export const isValidNetworkName = (chainId, networkName, nickname) =>
+  networkName === nickname || WHILELIST_NETWORK_NAME[chainId] === nickname;

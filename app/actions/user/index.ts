@@ -2,6 +2,7 @@ import { type AppThemeKey } from '../../util/theme/models';
 import {
   type InterruptBiometricsAction,
   type LockAppAction,
+  type CheckForDeeplinkAction,
   type AuthSuccessAction,
   type AuthErrorAction,
   type PasswordSetAction,
@@ -20,6 +21,9 @@ import {
   type SetAppThemeAction,
   type CheckedAuthAction,
   type PersistedDataLoadedAction,
+  type SetAppServicesReadyAction,
+  type SetExistingUserAction,
+  type SetIsConnectionRemovedAction,
   UserActionType,
 } from './types';
 
@@ -34,6 +38,12 @@ export function interruptBiometrics(): InterruptBiometricsAction {
 export function lockApp(): LockAppAction {
   return {
     type: UserActionType.LOCKED_APP,
+  };
+}
+
+export function checkForDeeplink(): CheckForDeeplinkAction {
+  return {
+    type: UserActionType.CHECK_FOR_DEEPLINK,
   };
 }
 
@@ -157,5 +167,36 @@ export function checkedAuth(initialScreen: string): CheckedAuthAction {
 export function onPersistedDataLoaded(): PersistedDataLoadedAction {
   return {
     type: UserActionType.ON_PERSISTED_DATA_LOADED,
+  };
+}
+
+/**
+ * Action to signal that app services are ready
+ */
+export function setAppServicesReady(): SetAppServicesReadyAction {
+  return {
+    type: UserActionType.SET_APP_SERVICES_READY,
+  };
+}
+
+/**
+ * Action to set existing user flag
+ */
+export function setExistingUser(existingUser: boolean): SetExistingUserAction {
+  return {
+    type: UserActionType.SET_EXISTING_USER,
+    payload: { existingUser },
+  };
+}
+
+/**
+ * Action to set isConnectionRemoved state
+ */
+export function setIsConnectionRemoved(
+  isConnectionRemoved: boolean,
+): SetIsConnectionRemovedAction {
+  return {
+    type: UserActionType.SET_IS_CONNECTION_REMOVED,
+    payload: { isConnectionRemoved },
   };
 }

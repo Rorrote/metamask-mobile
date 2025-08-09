@@ -6,44 +6,45 @@ import { createDeepEqualSelector } from './util';
 import { selectSelectedInternalAccountAddress } from './accountsController';
 import { isPortfolioViewEnabled } from '../util/networks';
 import {
-  selectChainId,
+  selectEvmChainId,
+  selectEvmNetworkConfigurationsByChainId,
   selectIsAllNetworks,
   selectIsPopularNetwork,
-  selectNetworkConfigurations,
 } from './networkController';
 import { PopularList } from '../util/networks/customNetworks';
+import { ChainId } from '@metamask/controller-utils';
 
 const selectTokensControllerState = (state: RootState) =>
   state?.engine?.backgroundState?.TokensController;
 
 export const selectTokens = createDeepEqualSelector(
   selectTokensControllerState,
-  selectChainId,
+  selectEvmChainId,
   selectSelectedInternalAccountAddress,
   (
     tokensControllerState: TokensControllerState,
     chainId: Hex,
     selectedAddress: string | undefined,
-  ) => {
-    if (isPortfolioViewEnabled()) {
-      return (
-        tokensControllerState?.allTokens[chainId]?.[selectedAddress as Hex] ||
-        []
-      );
-    }
-    return tokensControllerState?.tokens || [];
-  },
+  ) =>
+    tokensControllerState?.allTokens[chainId]?.[selectedAddress as Hex] || [],
 );
 
 export const selectTokensByChainIdAndAddress = createDeepEqualSelector(
   selectTokensControllerState,
-  selectChainId,
   selectSelectedInternalAccountAddress,
+  (_state, chainId: Hex) => chainId,
   (
     tokensControllerState: TokensControllerState,
-    chainId: Hex,
     selectedAddress: string | undefined,
-  ) => tokensControllerState?.allTokens[chainId]?.[selectedAddress as Hex],
+    chainId: Hex,
+  ) =>
+    tokensControllerState?.allTokens[chainId]?.[selectedAddress as Hex]?.reduce(
+      (tokensMap: { [address: string]: Token }, token: Token) => ({
+        ...tokensMap,
+        [token.address]: token,
+      }),
+      {},
+    ) ?? {},
 );
 
 export const selectTokensByAddress = createSelector(
@@ -62,25 +63,41 @@ export const selectTokensLength = createSelector(
 
 export const selectIgnoreTokens = createSelector(
   selectTokensControllerState,
-  (tokensControllerState: TokensControllerState) =>
-    tokensControllerState?.ignoredTokens,
+  selectEvmChainId,
+  selectSelectedInternalAccountAddress,
+  (
+    tokensControllerState: TokensControllerState,
+    chainId: Hex,
+    selectedAddress: string | undefined,
+  ) =>
+    tokensControllerState?.allIgnoredTokens?.[chainId]?.[
+      selectedAddress as Hex
+    ],
 );
 
 export const selectDetectedTokens = createSelector(
   selectTokensControllerState,
-  (tokensControllerState: TokensControllerState) =>
-    tokensControllerState?.detectedTokens,
+  selectEvmChainId,
+  selectSelectedInternalAccountAddress,
+  (
+    tokensControllerState: TokensControllerState,
+    chainId: Hex,
+    selectedAddress: string | undefined,
+  ) =>
+    tokensControllerState?.allDetectedTokens?.[chainId]?.[
+      selectedAddress as Hex
+    ],
 );
 
-export const selectAllTokens = createSelector(
+export const selectAllTokens = createDeepEqualSelector(
   selectTokensControllerState,
   (tokensControllerState: TokensControllerState) =>
     tokensControllerState?.allTokens,
 );
 
 export const getChainIdsToPoll = createDeepEqualSelector(
-  selectNetworkConfigurations,
-  selectChainId,
+  selectEvmNetworkConfigurationsByChainId,
+  selectEvmChainId,
   (networkConfigurations, currentChainId) => {
     if (!isPortfolioViewEnabled()) {
       return [currentChainId];
@@ -92,6 +109,8 @@ export const getChainIdsToPoll = createDeepEqualSelector(
     return Object.keys(networkConfigurations).filter(
       (chainId) =>
         chainId === currentChainId ||
+        chainId === ChainId.mainnet ||
+        chainId === ChainId['linea-mainnet'] ||
         popularNetworksChainIds.includes(chainId as Hex),
     );
   },
@@ -168,7 +187,7 @@ export const selectAllDetectedTokensFlat = createSelector(
 export const selectTransformedTokens = createSelector(
   selectAllTokens,
   selectSelectedInternalAccountAddress,
-  selectChainId,
+  selectEvmChainId,
   selectIsAllNetworks,
   selectIsPopularNetwork,
   (

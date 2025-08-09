@@ -8,40 +8,53 @@ import { backgroundState } from '../../../util/test/initial-root-state';
 import { act } from '@testing-library/react-hooks';
 import PAGINATION_OPERATIONS from '../../../constants/pagination';
 import {
+  ACCOUNT_SELECTOR_FORGET_BUTTON,
   ACCOUNT_SELECTOR_NEXT_BUTTON,
   ACCOUNT_SELECTOR_PREVIOUS_BUTTON,
 } from '../../../../wdio/screen-objects/testIDs/Components/AccountSelector.testIds';
+import { removeAccountsFromPermissions } from '../../../core/Permissions';
 
-const mockedNavigate = jest.fn();
+jest.mock('../../../core/Permissions', () => ({
+  removeAccountsFromPermissions: jest.fn(),
+}));
+
+const MockRemoveAccountsFromPermissions = jest.mocked(
+  removeAccountsFromPermissions,
+);
+
+const mockedNavigate = {
+  pop: jest.fn(),
+  goBack: jest.fn(),
+};
 
 const mockPage0Accounts = [
   {
     address: '0x4x678901234567890123456789012345678901210',
-    shortenedAddress: '0x4x67...1210',
+    shortenedAddress: '0x4x678...01210',
     balance: '0x0',
     index: 0,
   },
   {
     address: '0xa1e359811322d97991e03f863a0c30c2cf029cd24',
-    shortenedAddress: '0xa1e3...cd24',
+    shortenedAddress: '0xa1e35...9cd24',
     balance: '0x0',
     index: 1,
   },
   {
     address: '0xc1e359811322d97991e03f863a0c30c2cf029ce22',
-    shortenedAddress: '0xc1e3...ce22',
+    shortenedAddress: '0xc1e35...9ce22',
     balance: '0x0',
     index: 2,
   },
   {
     address: '0xd0a1e359811322d97991e03f863a0c30c2cf029c1',
-    shortenedAddress: '0xd0a1...29c1',
+    shortenedAddress: '0xd0a1e...029c1',
     balance: '0x0',
     index: 3,
   },
   {
     address: '0x4a1e359811322d97991e03f863a0c30c2cf029c13',
-    shortenedAddress: '0x4a1e...9c13',
+    shortenedAddress: '0x4a1e3...29c13',
     balance: '0x0',
     index: 4,
   },
@@ -50,31 +63,31 @@ const mockPage0Accounts = [
 const mockPage1Accounts = [
   {
     address: '0x12345678901234567890123456789012345678902',
-    shortenedAddress: '0x1234...8902',
+    shortenedAddress: '0x12345...78902',
     balance: '0x0',
     index: 5,
   },
   {
     address: '0x25678901234567890123456789012345678901231',
-    shortenedAddress: '0x2567...1231',
+    shortenedAddress: '0x25678...01231',
     balance: '0x0',
     index: 6,
   },
   {
     address: '0x3b678901234567890123456789012345678901202',
-    shortenedAddress: '0x3b67...1202',
+    shortenedAddress: '0x3b678...01202',
     balance: '0x0',
     index: 7,
   },
   {
     address: '0x42345678901234567890123456789012345678904',
-    shortenedAddress: '0x4234...8904',
+    shortenedAddress: '0x42345...78904',
     balance: '0x0',
     index: 8,
   },
   {
     address: '0x52345678901234567890123456789012345678904',
-    shortenedAddress: '0x5234...8904',
+    shortenedAddress: '0x52345...78904',
     balance: '0x0',
     index: 9,
   },
@@ -99,8 +112,29 @@ jest.mock('../../../core/Engine', () => ({
       },
       getAccounts: jest.fn(),
       getOrAddQRKeyring: jest.fn(),
-      withKeyring: jest.fn(),
+      withKeyring: jest
+        .fn()
+        .mockImplementation(
+          (_selector: unknown, operation: (args: unknown) => void) =>
+            operation({
+              keyring: {
+                cancelSync: jest.fn(),
+                submitCryptoAccount: jest.fn(),
+                submitCryptoHDKey: jest.fn(),
+                getAccounts: jest
+                  .fn()
+                  .mockReturnValue([
+                    '0x4x678901234567890123456789012345678901210',
+                    '0xa1e359811322d97991e03f863a0c30c2cf029cd24',
+                  ]),
+              },
+              metadata: { id: '1234' },
+            }),
+        ),
       connectQRHardware: jest.fn(),
+      forgetQRDevice: jest
+        .fn()
+        .mockReturnValue({ remainingAccounts: ['0xdeadbeef'] }),
     },
     AccountTrackerController: {
       syncBalanceWithAddresses: jest.fn(),
@@ -110,6 +144,7 @@ jest.mock('../../../core/Engine', () => ({
     subscribe: jest.fn(),
     unsubscribe: jest.fn(),
   },
+  setSelectedAddress: jest.fn(),
 }));
 const MockEngine = jest.mocked(Engine);
 
@@ -260,5 +295,34 @@ describe('ConnectQRHardware', () => {
     mockPage0Accounts.forEach((account) => {
       expect(getByText(account.shortenedAddress)).toBeDefined();
     });
+  });
+
+  it('removes any hardware wallet accounts from existing permissions', async () => {
+    mockKeyringController.getAccounts.mockResolvedValue([]);
+
+    const { getByTestId } = renderWithProvider(
+      <ConnectQRHardware navigation={mockedNavigate} />,
+      { state: mockInitialState },
+    );
+
+    const button = getByTestId(QR_CONTINUE_BUTTON);
+    expect(button).toBeDefined();
+
+    await act(async () => {
+      fireEvent.press(button);
+    });
+
+    const forgetButton = getByTestId(ACCOUNT_SELECTOR_FORGET_BUTTON);
+    expect(forgetButton).toBeDefined();
+    await act(async () => {
+      fireEvent.press(forgetButton);
+    });
+
+    expect(mockKeyringController.withKeyring).toHaveBeenCalled();
+    expect(MockRemoveAccountsFromPermissions).toHaveBeenCalledWith([
+      '0x4x678901234567890123456789012345678901210',
+      '0xa1e359811322d97991e03f863a0c30c2cf029cd24',
+    ]);
+    expect(mockKeyringController.forgetQRDevice).toHaveBeenCalled();
   });
 });

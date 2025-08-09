@@ -1,20 +1,28 @@
 import React from 'react';
 import renderWithProvider from '../../../../../util/test/renderWithProvider';
 import StakeConfirmationView from './StakeConfirmationView';
-import { Image } from 'react-native';
+import { Image, ImageSize } from 'react-native';
 import { createMockAccountsControllerState } from '../../../../../util/test/accountsControllerTestUtils';
 import { backgroundState } from '../../../../../util/test/initial-root-state';
 import configureMockStore from 'redux-mock-store';
 import { Provider } from 'react-redux';
 import { StakeConfirmationViewProps } from './StakeConfirmationView.types';
-import { MOCK_POOL_STAKING_SDK } from '../../__mocks__/mockData';
+import { MOCK_POOL_STAKING_SDK } from '../../__mocks__/stakeMockData';
 
 jest.mock('../../../../hooks/useIpfsGateway', () => jest.fn());
 
-Image.getSize = jest.fn((_uri, success) => {
-  success(100, 100); // Mock successful response for ETH native Icon Image
-});
-
+Image.getSize = jest.fn(
+  (
+    _uri: string,
+    success?: (width: number, height: number) => void,
+    _failure?: (error: Error) => void,
+  ) => {
+    if (success) {
+      success(100, 100);
+    }
+    return Promise.resolve<ImageSize>({ width: 100, height: 100 });
+  },
+);
 const MOCK_ADDRESS_1 = '0x0';
 const MOCK_ADDRESS_2 = '0x1';
 
@@ -73,17 +81,29 @@ jest.mock('../../hooks/usePooledStakes', () => ({
   }),
 }));
 
+expect.addSnapshotSerializer({
+  test: (val) =>
+    val &&
+    typeof val === 'object' &&
+    (val.props?.source?.uri === '' ||
+      val.props?.onLayout ||
+      val.props?.onError ||
+      val.props?.onLoadEnd),
+  print: () => 'IGNORED_RANDOM_ELEMENT',
+});
+
 describe('StakeConfirmationView', () => {
   it('render matches snapshot', () => {
     const props: StakeConfirmationViewProps = {
       route: {
         key: '1',
         params: {
-          amountWei: '3210000000000000',
-          amountFiat: '7.46',
-          annualRewardRate: '2.5%',
-          annualRewardsETH: '2.5 ETH',
-          annualRewardsFiat: '$5000',
+          amountWei: '10000000000000000',
+          amountFiat: '26.21',
+          annualRewardRate: '2.6%',
+          annualRewardsETH: '0.00026 ETH',
+          annualRewardsFiat: '$0.68',
+          chainId: '1',
         },
         name: 'params',
       },

@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { INotification } from '../../../../util/notifications';
+import {
+  INotification,
+  isNotificationsFeatureEnabled,
+} from '../../../../util/notifications';
 import { useTheme } from '../../../../util/theme';
 
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
@@ -20,6 +23,7 @@ import ModalField from './Fields';
 import ModalHeader from './Headers';
 import ModalFooter from './Footers';
 import { toLocaleDate } from '../../../../util/date';
+import { NotificationDetailsViewSelectorsIDs } from '../../../../../e2e/selectors/Notifications/NotificationDetailsView.selectors';
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -59,7 +63,10 @@ const NotificationsDetails = ({ route, navigation }: Props) => {
 
   const HeaderLeft = useCallback(
     () => (
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        testID={NotificationDetailsViewSelectorsIDs.BACK_BUTTON}
+      >
         <Icon
           name={IconName.ArrowLeft}
           size={IconSize.Md}
@@ -117,4 +124,12 @@ const NotificationsDetails = ({ route, navigation }: Props) => {
   );
 };
 
-export default NotificationsDetails;
+const NotificationDetailsContainer = (props: Props) => {
+  if (!isNotificationsFeatureEnabled()) {
+    return null;
+  }
+
+  return <NotificationsDetails {...props} />;
+};
+
+export default NotificationDetailsContainer;

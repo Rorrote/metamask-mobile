@@ -12,8 +12,18 @@ module.exports = {
     'plugin:import/warnings',
     'plugin:react/recommended',
   ],
-  plugins: ['@typescript-eslint', '@metamask/design-tokens'],
+  // ESLint can find the plugin without the `eslint-plugin-` prefix. Ex. `eslint-plugin-react-compiler` -> `react-compiler`
+  plugins: [
+    '@typescript-eslint',
+    '@metamask/design-tokens',
+    'react-compiler',
+    'tailwindcss',
+  ],
   overrides: [
+    {
+      files: ['e2e/**/*.{js,ts}'],
+      extends: ['./e2e/framework/.eslintrc.js'],
+    },
     {
       files: ['*.{ts,tsx}'],
       extends: ['@metamask/eslint-config-typescript'],
@@ -78,10 +88,11 @@ module.exports = {
         'app/components/UI/Name/**/*.{js,ts,tsx}',
         'app/components/UI/SimulationDetails/**/*.{js,ts,tsx}',
         'app/components/hooks/DisplayName/**/*.{js,ts,tsx}',
-        'app/components/Views/confirmations/**/*.{js,ts,tsx}'
+        'app/components/Views/confirmations/**/*.{js,ts,tsx}',
       ],
       excludedFiles: [
-        'app/components/Views/confirmations/components/WatchAssetRequest/**/*.{js,ts,tsx}'],
+        'app/components/Views/confirmations/components/WatchAssetRequest/**/*.{js,ts,tsx}',
+      ],
       rules: {
         'no-restricted-syntax': [
           'error',
@@ -97,13 +108,36 @@ module.exports = {
               'selectProviderType',
               'selectRpcUrl',
               'selectSelectedNetworkClientId',
-              'selectTicker',
+              'selectEvmTicker',
             ]
               .map((method) => `^${method}$`)
               .join('|')}/]`,
             message: 'Avoid using global network selectors in confirmations',
           },
         ],
+      },
+    },
+    {
+      files: [
+        'app/component-library/**/*.{js,ts,tsx}',
+        'app/components/**/*.{js,ts,tsx}',
+      ],
+      plugins: ['tailwindcss'],
+      rules: {
+        'tailwindcss/classnames-order': 'error',
+        'tailwindcss/enforces-negative-arbitrary-values': 'error',
+        'tailwindcss/enforces-shorthand': 'error',
+        'tailwindcss/no-arbitrary-value': 'off', // There are legitimate reasons to use arbitrary values but we should specifically error on static colors
+        'tailwindcss/no-custom-classname': 'error',
+        'tailwindcss/no-contradicting-classname': 'error',
+        'tailwindcss/no-unnecessary-arbitrary-value': 'error',
+      },
+      settings: {
+        tailwindcss: {
+          callees: ['twClassName', 'tw'],
+          config: './tailwind.config.js',
+          tags: ['tw'], // Enable template literal support for tw`classnames`
+        },
       },
     },
   ],
@@ -135,6 +169,8 @@ module.exports = {
   },
 
   rules: {
+    // Set to error once all warnings reported by React Compiler are resolved
+    'react-compiler/react-compiler': 'warn',
     'no-catch-shadow': 0,
     'no-console': ['error', { allow: ['warn', 'error'] }],
     quotes: [

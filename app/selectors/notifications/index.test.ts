@@ -1,6 +1,7 @@
 import { TRIGGER_TYPES } from '@metamask/notification-services-controller/notification-services';
 import {
   selectIsMetamaskNotificationsEnabled,
+  selectIsMetaMaskPushNotificationsEnabled,
   selectIsMetamaskNotificationsFeatureSeen,
   selectIsUpdatingMetamaskNotifications,
   selectIsFetchingMetamaskNotifications,
@@ -12,15 +13,22 @@ import {
   getMetamaskNotificationsUnreadCount,
   getMetamaskNotificationsReadCount,
   getOnChainMetamaskNotificationsUnreadCount,
+  selectIsMetaMaskPushNotificationsLoading,
+  getValidNotificationAccounts,
 } from './index';
 import { RootState } from '../../reducers';
-import { MOCK_NOTIFICATION_SERVICES_CONTROLLER } from './testUtils';
+import {
+  MOCK_NOTIFICATION_SERVICES_CONTROLLER,
+  MOCK_NOTIFICATION_SERVICES_PUSH_CONTROLLER,
+} from './testUtils';
 
 describe('Notification Selectors', () => {
   const mockState = {
     engine: {
       backgroundState: {
         NotificationServicesController: MOCK_NOTIFICATION_SERVICES_CONTROLLER,
+        NotificationServicesPushController:
+          MOCK_NOTIFICATION_SERVICES_PUSH_CONTROLLER,
       },
     },
   } as unknown as RootState;
@@ -28,6 +36,18 @@ describe('Notification Selectors', () => {
   it('selectIsMetamaskNotificationsEnabled returns correct value', () => {
     expect(selectIsMetamaskNotificationsEnabled(mockState)).toEqual(
       MOCK_NOTIFICATION_SERVICES_CONTROLLER.isNotificationServicesEnabled,
+    );
+  });
+
+  it('selectIsMetaMaskPushNotificationsEnabled returns correct value', () => {
+    expect(selectIsMetaMaskPushNotificationsEnabled(mockState)).toEqual(
+      MOCK_NOTIFICATION_SERVICES_PUSH_CONTROLLER.isPushEnabled,
+    );
+  });
+
+  it('selectIsMetaMaskPushNotificationsLoading returns correct value', () => {
+    expect(selectIsMetaMaskPushNotificationsLoading(mockState)).toEqual(
+      MOCK_NOTIFICATION_SERVICES_PUSH_CONTROLLER.isUpdatingFCMToken,
     );
   });
 
@@ -105,5 +125,22 @@ describe('Notification Selectors', () => {
     expect(getOnChainMetamaskNotificationsUnreadCount(mockState)).toEqual(
       unreadOnChainCount,
     );
+  });
+
+  it('getValidNotificationAccounts selects the valid accounts that can enable notifications', () => {
+    const state = { ...mockState };
+    state.engine.backgroundState.NotificationServicesController.subscriptionAccountsSeen =
+      ['0x1111'];
+    expect(getValidNotificationAccounts(state)).toStrictEqual(['0x1111']);
+  });
+
+  it('getValidNotificationAccounts returns same reference when called with same state', () => {
+    const state = { ...mockState };
+    state.engine.backgroundState.NotificationServicesController.subscriptionAccountsSeen =
+      ['0x1111'];
+
+    const result1 = getValidNotificationAccounts(state);
+    const result2 = getValidNotificationAccounts(state);
+    expect(result1 === result2).toBe(true);
   });
 });

@@ -61,7 +61,7 @@ const RpcSelectionModal: FC<RpcSelectionModalProps> = ({
 
   const onRpcSelect = useCallback(
     async (clientId: string, chainId: `0x${string}`) => {
-      const { NetworkController } = Engine.context;
+      const { NetworkController, MultichainNetworkController } = Engine.context;
       const existingNetwork = networkConfigurations[chainId];
 
       const indexOfRpc = existingNetwork.rpcEndpoints.findIndex(
@@ -84,7 +84,7 @@ const RpcSelectionModal: FC<RpcSelectionModalProps> = ({
       });
 
       // Set the active network
-      NetworkController.setActiveNetwork(clientId);
+      MultichainNetworkController.setActiveNetwork(clientId);
       // Redirect to wallet page
       navigate(Routes.WALLET.HOME, {
         screen: Routes.WALLET.TAB_STACK_FLOW,
@@ -119,7 +119,6 @@ const RpcSelectionModal: FC<RpcSelectionModalProps> = ({
       case CHAIN_IDS.LINEA_MAINNET:
         return images['LINEA-MAINNET'];
       default:
-        //@ts-expect-error - The utils/network file is still JS and this function expects a networkType, and should be optional
         return getNetworkImageSource({
           chainId: showMultiRpcSelectModal?.chainId?.toString(),
         });

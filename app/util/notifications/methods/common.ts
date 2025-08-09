@@ -7,8 +7,6 @@ import { Web3Provider } from '@ethersproject/providers';
 import { toHex } from '@metamask/controller-utils';
 import BigNumber from 'bignumber.js';
 import {
-  UserStorage,
-  USER_STORAGE_VERSION_KEY,
   OnChainRawNotification,
   OnChainRawNotificationsWithNetworkFields,
   TRIGGER_TYPES,
@@ -20,13 +18,13 @@ import {
   NOTIFICATION_NETWORK_CURRENCY_SYMBOL,
   SUPPORTED_NOTIFICATION_BLOCK_EXPLORERS,
 } from '@metamask/notification-services-controller/notification-services/ui';
-import { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import Engine from '../../../core/Engine';
 import { IconName } from '../../../component-library/components/Icons/Icon';
 import { hexWEIToDecETH, hexWEIToDecGWEI } from '../../conversions';
 import { calcTokenAmount } from '../../transactions';
 import images from '../../../images/image-icons';
 import I18n, { strings } from '../../../../locales/i18n';
+import { ImageSourcePropType } from 'react-native';
 
 /**
  * Checks if 2 date objects are on the same day
@@ -269,7 +267,7 @@ export const getNotificationBadge = (trigger_type: string) => {
     case TRIGGER_TYPES.ERC721_SENT:
     case TRIGGER_TYPES.ERC1155_SENT:
     case TRIGGER_TYPES.ETH_SENT:
-      return IconName.Arrow2Upright;
+      return IconName.Arrow2UpRight;
     case TRIGGER_TYPES.ERC20_RECEIVED:
     case TRIGGER_TYPES.ERC721_RECEIVED:
     case TRIGGER_TYPES.ERC1155_RECEIVED:
@@ -347,6 +345,22 @@ export const sortNotifications = (
   );
 };
 
+type KnownChainIds =
+  | (typeof NOTIFICATION_CHAINS_ID)[keyof typeof NOTIFICATION_CHAINS_ID]
+  | '8453';
+
+const imageMap = {
+  [NOTIFICATION_CHAINS_ID.ETHEREUM]: images.ETHEREUM,
+  [NOTIFICATION_CHAINS_ID.LINEA]: images['LINEA-MAINNET'],
+  [NOTIFICATION_CHAINS_ID.ARBITRUM]: images.AETH,
+  [NOTIFICATION_CHAINS_ID.OPTIMISM]: images.OPTIMISM,
+  [NOTIFICATION_CHAINS_ID.BSC]: images.BNB,
+  [NOTIFICATION_CHAINS_ID.AVALANCHE]: images.AVAX,
+  [NOTIFICATION_CHAINS_ID.POLYGON]: images.POL,
+  [NOTIFICATION_CHAINS_ID.SEI]: images.SEI,
+  '8453': images.BASE,
+} satisfies Record<KnownChainIds, ImageSourcePropType | undefined>;
+
 /**
  * Gets token information for the notification chains we support.
  * @param chainId Notification Chain Id. This is a subset of chains that support notifications
@@ -354,53 +368,19 @@ export const sortNotifications = (
  */
 export function getNativeTokenDetailsByChainId(chainId: number) {
   const chainIdString = chainId.toString();
-  if (chainIdString === NOTIFICATION_CHAINS_ID.ETHEREUM) {
+  const knownChainIds: KnownChainIds[] = [
+    ...Object.values(NOTIFICATION_CHAINS_ID),
+    '8453',
+  ];
+
+  if (knownChainIds.includes(chainIdString as KnownChainIds)) {
+    const knownChainId = chainIdString as KnownChainIds;
+    const NAMES = { ...NOTIFICATION_NETWORK_CURRENCY_NAME, '8453': 'Base' };
+    const SYMBOLS = { ...NOTIFICATION_NETWORK_CURRENCY_SYMBOL, '8453': 'ETH' };
     return {
-      name: NOTIFICATION_NETWORK_CURRENCY_NAME[chainIdString],
-      symbol: NOTIFICATION_NETWORK_CURRENCY_SYMBOL[chainIdString],
-      image: images.ETHEREUM,
-    };
-  }
-  if (chainIdString === NOTIFICATION_CHAINS_ID.OPTIMISM) {
-    return {
-      name: NOTIFICATION_NETWORK_CURRENCY_NAME[chainIdString],
-      symbol: NOTIFICATION_NETWORK_CURRENCY_SYMBOL[chainIdString],
-      image: images.OPTIMISM,
-    };
-  }
-  if (chainIdString === NOTIFICATION_CHAINS_ID.BSC) {
-    return {
-      name: NOTIFICATION_NETWORK_CURRENCY_NAME[chainIdString],
-      symbol: NOTIFICATION_NETWORK_CURRENCY_SYMBOL[chainIdString],
-      image: images.BNB,
-    };
-  }
-  if (chainIdString === NOTIFICATION_CHAINS_ID.POLYGON) {
-    return {
-      name: NOTIFICATION_NETWORK_CURRENCY_NAME[chainIdString],
-      symbol: NOTIFICATION_NETWORK_CURRENCY_SYMBOL[chainIdString],
-      image: images.POL,
-    };
-  }
-  if (chainIdString === NOTIFICATION_CHAINS_ID.ARBITRUM) {
-    return {
-      name: NOTIFICATION_NETWORK_CURRENCY_NAME[chainIdString],
-      symbol: NOTIFICATION_NETWORK_CURRENCY_SYMBOL[chainIdString],
-      image: images.AETH,
-    };
-  }
-  if (chainIdString === NOTIFICATION_CHAINS_ID.AVALANCHE) {
-    return {
-      name: NOTIFICATION_NETWORK_CURRENCY_NAME[chainIdString],
-      symbol: NOTIFICATION_NETWORK_CURRENCY_SYMBOL[chainIdString],
-      image: images.AVAX,
-    };
-  }
-  if (chainIdString === NOTIFICATION_CHAINS_ID.LINEA) {
-    return {
-      name: NOTIFICATION_NETWORK_CURRENCY_NAME[chainIdString],
-      symbol: NOTIFICATION_NETWORK_CURRENCY_SYMBOL[chainIdString],
-      image: images['LINEA-MAINNET'],
+      name: NAMES[knownChainId],
+      symbol: SYMBOLS[knownChainId],
+      image: imageMap[knownChainId],
     };
   }
 
@@ -485,81 +465,4 @@ export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     setTimeout(() => reject(new Error(strings('notifications.timeout'))), ms),
   );
   return Promise.race([promise, timeout]);
-}
-
-export interface NotificationTrigger {
-  id: string;
-  chainId: string;
-  kind: string;
-  address: string;
-}
-
-type MapTriggerFn<Result> = (trigger: NotificationTrigger) => Result;
-
-interface TraverseTriggerOpts<Result> {
-  address?: string;
-  mapTrigger?: MapTriggerFn<Result>;
-}
-
-const triggerToId = (trigger: NotificationTrigger) => trigger.id;
-const triggerIdentity = (trigger: NotificationTrigger) => trigger;
-
-function traverseUserStorageTriggers<ResultTriggers = NotificationTrigger>(
-  userStorage: UserStorage,
-  options?: TraverseTriggerOpts<ResultTriggers>,
-) {
-  const triggers: ResultTriggers[] = [];
-  const mapTrigger =
-    options?.mapTrigger ?? (triggerIdentity as MapTriggerFn<ResultTriggers>);
-
-  for (const address in userStorage) {
-    if (address === (USER_STORAGE_VERSION_KEY as unknown as string)) continue;
-    if (options?.address && address !== options.address) continue;
-    for (const chain_id in userStorage[address]) {
-      for (const uuid in userStorage[address]?.[chain_id]) {
-        if (uuid) {
-          triggers.push(
-            mapTrigger({
-              id: uuid,
-              kind: userStorage[address]?.[chain_id]?.[uuid]?.k,
-              chainId: chain_id,
-              address,
-            }),
-          );
-        }
-      }
-    }
-  }
-
-  return triggers;
-}
-
-export function getUUIDs(userStorage: UserStorage, address: string): string[] {
-  return traverseUserStorageTriggers(userStorage, {
-    address,
-    mapTrigger: triggerToId,
-  });
-}
-
-export function getAllUUIDs(userStorage: UserStorage): string[] {
-  const uuids = traverseUserStorageTriggers(userStorage, {
-    mapTrigger: triggerToId,
-  });
-  return uuids;
-}
-
-export function parseNotification(
-  remoteMessage: FirebaseMessagingTypes.RemoteMessage,
-) {
-  const notification = remoteMessage.data?.data;
-  const parsedNotification =
-    typeof notification === 'string' ? JSON.parse(notification) : notification;
-
-  const notificationData = {
-    type: parsedNotification?.type || parsedNotification?.data?.kind,
-    transaction: parsedNotification?.data,
-    duration: 5000,
-  };
-
-  return notificationData;
 }

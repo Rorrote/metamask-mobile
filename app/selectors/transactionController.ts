@@ -1,6 +1,7 @@
 import { createSelector } from 'reselect';
 import { RootState } from '../reducers';
 import { createDeepEqualSelector } from './util';
+import { selectPendingSmartTransactionsBySender } from './smartTransactionsController';
 
 const selectTransactionControllerState = (state: RootState) =>
   state.engine.backgroundState.TransactionController;
@@ -8,6 +9,11 @@ const selectTransactionControllerState = (state: RootState) =>
 const selectTransactionsStrict = createSelector(
   selectTransactionControllerState,
   (transactionControllerState) => transactionControllerState.transactions,
+);
+
+const selectTransactionBatchesStrict = createSelector(
+  selectTransactionControllerState,
+  (transactionControllerState) => transactionControllerState.transactionBatches,
 );
 
 export const selectTransactions = createDeepEqualSelector(
@@ -18,7 +24,18 @@ export const selectTransactions = createDeepEqualSelector(
 export const selectNonReplacedTransactions = createDeepEqualSelector(
   selectTransactionsStrict,
   (transactions) =>
-    transactions.filter((tx) => !(tx.replacedBy && tx.replacedById && tx.hash)),
+    transactions.filter(
+      ({ replacedBy, replacedById, hash }) =>
+        !(replacedBy && replacedById && hash),
+    ),
+);
+
+export const selectSortedTransactions = createDeepEqualSelector(
+  [selectNonReplacedTransactions, selectPendingSmartTransactionsBySender],
+  (nonReplacedTransactions, pendingSmartTransactions) =>
+    [...nonReplacedTransactions, ...pendingSmartTransactions].sort(
+      (a, b) => (b?.time ?? 0) - (a?.time ?? 0),
+    ),
 );
 
 export const selectSwapsTransactions = createSelector(
@@ -32,4 +49,10 @@ export const selectTransactionMetadataById = createDeepEqualSelector(
   selectTransactionsStrict,
   (_: RootState, id: string) => id,
   (transactions, id) => transactions.find((tx) => tx.id === id),
+);
+
+export const selectTransactionBatchMetadataById = createDeepEqualSelector(
+  selectTransactionBatchesStrict,
+  (_: RootState, id: string) => id,
+  (transactionBatches, id) => transactionBatches?.find((tx) => tx.id === id),
 );

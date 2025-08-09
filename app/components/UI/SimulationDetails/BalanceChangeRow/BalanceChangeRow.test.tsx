@@ -21,6 +21,7 @@ const balanceChangeMock: BalanceChange = {
   },
   amount: new BigNumber(100),
   fiatAmount: 0,
+  usdAmount: 0,
 } as BalanceChange;
 
 describe('BalanceChangeList', () => {
@@ -66,5 +67,17 @@ describe('BalanceChangeList', () => {
     const container = queryByTestId('balance-change-row-fiat-display');
 
     expect(container).toBeNull();
+  });
+
+  it('adds EditSpendingCapButton component if onApprovalAmountUpdate is defined', () => {
+    const { getByTestId } = render(
+      <BalanceChangeRow
+        showFiat={false}
+        balanceChange={balanceChangeMock}
+        onApprovalAmountUpdate={() => Promise.resolve()}
+      />,
+    );
+
+    expect(getByTestId('edit-spending-cap-button')).toBeTruthy();
   });
 });

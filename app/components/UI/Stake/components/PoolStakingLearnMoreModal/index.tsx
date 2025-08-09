@@ -16,7 +16,7 @@ import {
   ButtonSize,
   ButtonVariants,
 } from '../../../../../component-library/components/Buttons/Button/Button.types';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { POOLED_STAKING_FAQ_URL } from '../../constants';
 import styleSheet from './PoolStakingLearnMoreModal.styles';
 import { useStyles } from '../../../../hooks/useStyles';
@@ -32,6 +32,24 @@ import { strings } from '../../../../../../locales/i18n';
 import { parseVaultApyAveragesResponse } from './PoolStakingLearnMoreModal.utils';
 import { EVENT_LOCATIONS, EVENT_PROVIDERS } from '../../constants/events';
 import useVaultApyAverages from '../../hooks/useVaultApyAverages';
+import {
+  CommonPercentageInputUnits,
+  formatPercent,
+  PercentageOutputFormat,
+} from '../../utils/value';
+import { Hex } from 'viem/_types/types/misc';
+import { getDecimalChainId } from '../../../../../util/networks';
+import { endTrace, trace, TraceName } from '../../../../../util/trace';
+import { EARN_EXPERIENCES } from '../../../Earn/constants/experiences';
+
+interface PoolStakingLearnMoreModalRouteParams {
+  chainId: Hex;
+}
+
+type PoolStakingLearnMoreModalRouteProp = RouteProp<
+  { params: PoolStakingLearnMoreModalRouteParams },
+  'params'
+>;
 
 const BodyText = () => {
   const { styles } = useStyles(styleSheet, {});
@@ -74,15 +92,24 @@ const PoolStakingLearnMoreModal = () => {
 
   const { navigate } = useNavigation();
 
+  const route = useRoute<PoolStakingLearnMoreModalRouteProp>();
+  const { chainId: routeChainId } = route.params;
+
   const sheetRef = useRef<BottomSheetRef>(null);
 
-  const { vaultApys, isLoadingVaultApys, refreshVaultApys } = useVaultApys();
+  const { vaultApys, isLoadingVaultApys } = useVaultApys(
+    getDecimalChainId(routeChainId),
+  );
 
-  const {
-    vaultApyAverages,
-    isLoadingVaultApyAverages,
-    refreshVaultApyAverages,
-  } = useVaultApyAverages();
+  // Order apys from oldest to newest
+  const reversedVaultApys = useMemo(
+    () => [...vaultApys].reverse(),
+    [vaultApys],
+  );
+
+  const { vaultApyAverages, isLoadingVaultApyAverages } = useVaultApyAverages(
+    getDecimalChainId(routeChainId),
+  );
 
   // Converts VaultApyAverage for use with interactive graph timespan buttons.
   const parsedVaultTimespanApyAverages = useMemo(() => {
@@ -100,23 +127,23 @@ const PoolStakingLearnMoreModal = () => {
     }
   }, [parsedVaultTimespanApyAverages]);
 
-  useEffect(() => {
-    async function refreshGraphData() {
-      await Promise.all([refreshVaultApyAverages(), refreshVaultApys()]).catch(
-        (err) =>
-          console.error(
-            'Failed to refresh Pool-Staking Learn More Modal Data: ',
-            err,
-          ),
-      );
-    }
-
-    refreshGraphData();
-  }, [refreshVaultApyAverages, refreshVaultApys]);
-
   const handleClose = () => {
     sheetRef.current?.onCloseBottomSheet();
   };
+
+  useEffect(() => {
+    trace({
+      name: TraceName.EarnFaqApys,
+      data: { experience: EARN_EXPERIENCES.POOLED_STAKING },
+    });
+    endTrace({ name: TraceName.EarnFaq });
+  }, []);
+
+  useEffect(() => {
+    if (Boolean(reversedVaultApys.length) && activeTimespanApyAverage) {
+      endTrace({ name: TraceName.EarnFaqApys });
+    }
+  }, [activeTimespanApyAverage, reversedVaultApys]);
 
   const redirectToLearnMore = () => {
     navigate('Webview', {
@@ -168,18 +195,24 @@ const PoolStakingLearnMoreModal = () => {
             {strings('stake.stake_eth_and_earn')}
           </Text>
         </BottomSheetHeader>
-        {Boolean(vaultApys.length) && activeTimespanApyAverage && (
+        {Boolean(reversedVaultApys.length) && activeTimespanApyAverage && (
           <InteractiveTimespanChart
-            dataPoints={vaultApys}
+            dataPoints={reversedVaultApys}
             yAccessor={(point) => new BigNumber(point.daily_apy).toNumber()}
-            defaultTitle={`${new BigNumber(
+            defaultTitle={`${formatPercent(
               activeTimespanApyAverage.apyAverage,
-            ).toFixed(2, BigNumber.ROUND_DOWN)}% ${strings('stake.apr')}`}
+              {
+                inputFormat: CommonPercentageInputUnits.PERCENTAGE,
+                outputFormat: PercentageOutputFormat.PERCENT_SIGN,
+                fixed: 1,
+              },
+            )} ${strings('stake.apr')}`}
             titleAccessor={(point) =>
-              `${new BigNumber(point.daily_apy).toFixed(
-                2,
-                BigNumber.ROUND_DOWN,
-              )}% ${strings('stake.apr')}`
+              `${formatPercent(point.daily_apy, {
+                inputFormat: CommonPercentageInputUnits.PERCENTAGE,
+                outputFormat: PercentageOutputFormat.PERCENT_SIGN,
+                fixed: 1,
+              })} ${strings('stake.apr')}`
             }
             defaultSubtitle={activeTimespanApyAverage.label}
             subtitleAccessor={(point) => formatChartDate(point.timestamp)}

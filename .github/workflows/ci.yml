@@ -31,7 +31,7 @@ jobs:
             echo "No changes detected"
           fi
   dedupe:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -49,7 +49,7 @@ jobs:
             exit 1
           fi
   git-safe-dependencies:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -60,17 +60,20 @@ jobs:
       - name: Run @lavamoat/git-safe-dependencies
         run: yarn git-safe-dependencies
   scripts:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         scripts:
           - lint
           - lint:tsc
+          - format:check:changed
           - audit:ci
           - test:depcheck
           - test:tgz-check
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -87,7 +90,7 @@ jobs:
             echo "No changes detected"
           fi
   unit-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -97,7 +100,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: yarn
-      - run: yarn setup
+      - run: yarn setup --node
       # The "10" in this command is the total number of shards. It must be kept
       # in sync with the length of matrix.shard
       - run: yarn test:unit --shard=${{ matrix.shard }}/10 --forceExit --silent --coverageReporters=json
@@ -122,7 +125,7 @@ jobs:
             echo "No changes detected"
           fi
   merge-unit-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: unit-tests
     steps:
       - uses: actions/checkout@v3
@@ -130,7 +133,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: yarn
-      - run: yarn setup
+      - run: yarn setup --node
       - uses: actions/download-artifact@v4
         with:
           path: tests/coverage/
@@ -156,7 +159,7 @@ jobs:
           fi
 
   js-bundle-size-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -164,13 +167,13 @@ jobs:
           node-version-file: '.nvmrc'
           cache: yarn
       - name: Install dependencies
-        run: yarn setup
+        run: yarn setup --no-build-android
 
       - name: Generate iOS bundle
         run: yarn gen-bundle:ios
 
       - name: Check bundle size
-        run: ./scripts/js-bundle-stats.sh ios/main.jsbundle 40
+        run: ./scripts/js-bundle-stats.sh ios/main.jsbundle 45
 
       - name: Upload iOS bundle
         uses: actions/upload-artifact@v4
@@ -198,7 +201,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MOBILE_BUNDLESIZE_TOKEN }}
 
   sonar-cloud:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: merge-unit-tests
     steps:
       - uses: actions/checkout@v3
@@ -213,9 +216,11 @@ jobs:
           path: coverage/
       - name: Upload coverage reports to Codecov
         if: ${{ always() }}
+        continue-on-error: true
         uses: codecov/codecov-action@d9f34f8cd5cb3b3eb79b3e4b5dae3a16df499a70
       - name: SonarCloud Scan
-        if: ${{ env.HAVE_SONAR_TOKEN == 'true' }}
+        if: ${{ env.HAVE_SONAR_TOKEN == 'true' && github.event_name == 'pull_request' }}
+        continue-on-error: true
         # This is SonarSource/sonarcloud-github-action@v2.0.0
         uses: SonarSource/sonarcloud-github-action@4b4d7634dab97dcee0b75763a54a6dc92a9e6bc1
         env:
@@ -250,7 +255,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Skip step if event is a PR
+          # Skip step if event is not a PR
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             echo "This job only runs for pull requests."
             exit 0
@@ -301,11 +306,11 @@ jobs:
         run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/62dc61a45fc95efe8c800af7a557ab0b9165d63b/scripts/download-actionlint.bash) 1.7.1
         shell: bash
       - name: Check workflow files
-        run: ${{ steps.download-actionlint.outputs.executable }} -color
+        run: ${{ steps.download-actionlint.outputs.executable }} -color -config-file .github/actionlint.yaml
         shell: bash
   all-jobs-pass:
     name: All jobs pass
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs:
       [
         check-diff,
@@ -324,7 +329,7 @@ jobs:
         run: echo "ALL_JOBS_PASSED=true" >> "$GITHUB_OUTPUT"
   check-all-jobs-pass:
     name: Check all jobs pass
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: all-jobs-pass
     if: always()
     steps:

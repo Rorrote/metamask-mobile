@@ -22,6 +22,9 @@ export const userInitialState: UserState = {
   initialScreen: '',
   appTheme: AppThemeKey.os,
   ambiguousAddressEntries: {},
+  appServicesReady: false,
+  existingUser: false,
+  isConnectionRemoved: false,
 };
 
 /**
@@ -108,6 +111,21 @@ const userReducer = (
       return {
         ...state,
         appTheme: action.payload.theme,
+      };
+    case UserActionType.SET_APP_SERVICES_READY:
+      return {
+        ...state,
+        appServicesReady: true,
+      };
+    case UserActionType.SET_EXISTING_USER:
+      return {
+        ...state,
+        existingUser: action.payload.existingUser,
+      };
+    case UserActionType.SET_IS_CONNECTION_REMOVED:
+      return {
+        ...state,
+        isConnectionRemoved: action.payload.isConnectionRemoved,
       };
     default:
       return state;

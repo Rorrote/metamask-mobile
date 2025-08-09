@@ -150,7 +150,13 @@ exports[`AccountSelector should render correctly 1`] = `
             "top": -1,
           }
         }
+        onGestureCancel={[Function]}
         pointerEvents="box-none"
+        sheetAllowedDetents="large"
+        sheetCornerRadius={-1}
+        sheetExpandsWhenScrolledToEdge={true}
+        sheetGrabberVisible={false}
+        sheetLargestUndimmedDetent="all"
         style={
           {
             "bottom": 0,
@@ -158,6 +164,7 @@ exports[`AccountSelector should render correctly 1`] = `
             "position": "absolute",
             "right": 0,
             "top": 0,
+            "zIndex": undefined,
           }
         }
       >
@@ -234,6 +241,9 @@ exports[`AccountSelector should render correctly 1`] = `
           >
             <View
               collapsable={false}
+              enabled={false}
+              handlerTag={-1}
+              handlerType="PanGestureHandler"
               onGestureHandlerEvent={[Function]}
               onGestureHandlerStateChange={[Function]}
               style={
@@ -324,7 +334,7 @@ exports[`AccountSelector should render correctly 1`] = `
                         style={
                           [
                             {
-                              "backgroundColor": "#00000099",
+                              "backgroundColor": "#3f434a66",
                               "bottom": 0,
                               "left": 0,
                               "position": "absolute",
@@ -364,6 +374,9 @@ exports[`AccountSelector should render correctly 1`] = `
                       >
                         <View
                           collapsable={false}
+                          enabled={true}
+                          handlerTag={-1}
+                          handlerType="PanGestureHandler"
                           onGestureHandlerEvent={[Function]}
                           onGestureHandlerStateChange={[Function]}
                           onLayout={[Function]}
@@ -371,14 +384,15 @@ exports[`AccountSelector should render correctly 1`] = `
                             [
                               {
                                 "backgroundColor": "#ffffff",
-                                "borderColor": "#BBC0C566",
-                                "borderTopLeftRadius": 8,
-                                "borderTopRightRadius": 8,
+                                "borderColor": "#b7bbc866",
+                                "borderTopLeftRadius": 24,
+                                "borderTopRightRadius": 24,
                                 "borderWidth": 1,
-                                "maxHeight": 1314,
+                                "display": "flex",
+                                "maxHeight": 1334,
                                 "overflow": "hidden",
                                 "paddingBottom": 0,
-                                "shadowColor": "#0000001A",
+                                "shadowColor": "#0000001a",
                                 "shadowOffset": {
                                   "height": 2,
                                   "width": 0,
@@ -408,7 +422,7 @@ exports[`AccountSelector should render correctly 1`] = `
                             <View
                               style={
                                 {
-                                  "backgroundColor": "#BBC0C566",
+                                  "backgroundColor": "#b7bbc866",
                                   "borderRadius": 2,
                                   "height": 4,
                                   "width": 40,
@@ -439,10 +453,9 @@ exports[`AccountSelector should render correctly 1`] = `
                               accessibilityRole="text"
                               style={
                                 {
-                                  "color": "#141618",
-                                  "fontFamily": "EuclidCircularB-Bold",
+                                  "color": "#121314",
+                                  "fontFamily": "Geist Bold",
                                   "fontSize": 18,
-                                  "fontWeight": "700",
                                   "letterSpacing": 0,
                                   "lineHeight": 24,
                                 }
@@ -459,38 +472,727 @@ exports[`AccountSelector should render correctly 1`] = `
                               }
                             />
                           </View>
-                          <RCTScrollView
-                            collapsable={false}
-                            getItem={[Function]}
-                            getItemCount={[Function]}
-                            initialNumToRender={999}
-                            keyExtractor={[Function]}
-                            onContentSizeChange={[Function]}
-                            onGestureHandlerEvent={[Function]}
-                            onGestureHandlerStateChange={[Function]}
-                            onLayout={[Function]}
-                            onMomentumScrollBegin={[Function]}
-                            onMomentumScrollEnd={[Function]}
-                            onScroll={[Function]}
-                            onScrollBeginDrag={[Function]}
-                            onScrollEndDrag={[Function]}
-                            removeClippedSubviews={false}
-                            renderItem={[Function]}
-                            renderScrollComponent={[Function]}
-                            scrollEventThrottle={50}
-                            stickyHeaderIndices={[]}
-                            testID="account-list"
-                            viewabilityConfigCallbackPairs={[]}
-                          >
-                            <View />
-                          </RCTScrollView>
                           <View
                             style={
                               {
-                                "marginHorizontal": 16,
-                                "marginVertical": 16,
+                                "flexDirection": "row",
+                                "flexGrow": 1,
+                                "flexShrink": 1,
                               }
                             }
+                          >
+                            <View
+                              collapsable={false}
+                              onLayout={[Function]}
+                              style={
+                                {
+                                  "flex": 1,
+                                  "overflow": "hidden",
+                                }
+                              }
+                            >
+                              <RCTScrollView
+                                collapsable={false}
+                                getItemType={[Function]}
+                                handlerTag={1}
+                                handlerType="NativeViewGestureHandler"
+                                keyExtractor={[Function]}
+                                maintainVisibleContentPosition={
+                                  {
+                                    "minIndexForVisible": 0,
+                                  }
+                                }
+                                onContentSizeChange={[Function]}
+                                onGestureHandlerEvent={[Function]}
+                                onGestureHandlerStateChange={[Function]}
+                                onScroll={[Function]}
+                                testID="account-list"
+                              >
+                                <View>
+                                  <View
+                                    style={
+                                      {
+                                        "height": 0,
+                                        "left": 0,
+                                        "position": "absolute",
+                                        "top": 1000000,
+                                      }
+                                    }
+                                  />
+                                  <View
+                                    style={
+                                      {
+                                        "height": 0,
+                                        "width": undefined,
+                                      }
+                                    }
+                                  />
+                                  <View
+                                    style={
+                                      {
+                                        "height": 0,
+                                        "marginLeft": undefined,
+                                        "marginTop": 0,
+                                        "opacity": 1,
+                                        "width": undefined,
+                                      }
+                                    }
+                                  >
+                                    <View
+                                      index={0}
+                                      onLayout={[Function]}
+                                      style={
+                                        {
+                                          "flexDirection": "column",
+                                          "height": undefined,
+                                          "left": 0,
+                                          "maxHeight": undefined,
+                                          "maxWidth": undefined,
+                                          "minHeight": undefined,
+                                          "minWidth": undefined,
+                                          "position": "absolute",
+                                          "top": 0,
+                                          "width": 0,
+                                        }
+                                      }
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "alignItems": "center",
+                                            "backgroundColor": "#ffffff",
+                                            "flexDirection": "row",
+                                          }
+                                        }
+                                      >
+                                        <TouchableOpacity
+                                          onLongPress={[Function]}
+                                          onPress={[Function]}
+                                          style={
+                                            {
+                                              "alignItems": "center",
+                                              "flex": 1,
+                                              "opacity": 1,
+                                              "padding": 16,
+                                              "position": "relative",
+                                              "zIndex": 1,
+                                            }
+                                          }
+                                          testID="select-with-menu"
+                                        >
+                                          <View
+                                            accessibilityRole="none"
+                                            accessible={true}
+                                            style={
+                                              {
+                                                "alignItems": "flex-start",
+                                                "flexDirection": "column",
+                                                "padding": 16,
+                                                "paddingBottom": 0,
+                                                "paddingLeft": 0,
+                                                "paddingRight": 0,
+                                                "paddingTop": 0,
+                                                "zIndex": 2,
+                                              }
+                                            }
+                                          >
+                                            <View
+                                              style={
+                                                {
+                                                  "alignItems": "center",
+                                                  "flexDirection": "row",
+                                                }
+                                              }
+                                            >
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "flexDirection": "row",
+                                                    "opacity": 1,
+                                                  }
+                                                }
+                                              >
+                                                <View
+                                                  style={
+                                                    {
+                                                      "backgroundColor": "#ffffff",
+                                                      "borderRadius": 8,
+                                                      "height": 32,
+                                                      "marginRight": 16,
+                                                      "overflow": "hidden",
+                                                      "width": 32,
+                                                    }
+                                                  }
+                                                  testID="cellbase-avatar"
+                                                >
+                                                  <View
+                                                    style={
+                                                      [
+                                                        {
+                                                          "overflow": "hidden",
+                                                        },
+                                                        {
+                                                          "backgroundColor": "#C7144F",
+                                                          "borderRadius": 16,
+                                                          "height": 32,
+                                                          "width": 32,
+                                                        },
+                                                        {
+                                                          "borderRadius": 8,
+                                                        },
+                                                      ]
+                                                    }
+                                                  >
+                                                    <RNSVGSvgView
+                                                      bbHeight={32}
+                                                      bbWidth={32}
+                                                      focusable={false}
+                                                      height={32}
+                                                      style={
+                                                        [
+                                                          {
+                                                            "backgroundColor": "transparent",
+                                                            "borderWidth": 0,
+                                                          },
+                                                          {
+                                                            "flex": 0,
+                                                            "height": 32,
+                                                            "width": 32,
+                                                          },
+                                                        ]
+                                                      }
+                                                      width={32}
+                                                    >
+                                                      <RNSVGGroup
+                                                        fill={
+                                                          {
+                                                            "payload": 4278190080,
+                                                            "type": 0,
+                                                          }
+                                                        }
+                                                      >
+                                                        <RNSVGRect
+                                                          fill={
+                                                            {
+                                                              "payload": 4294711651,
+                                                              "type": 0,
+                                                            }
+                                                          }
+                                                          height={32}
+                                                          matrix={
+                                                            [
+                                                              0.46329603511986217,
+                                                              0.8862035792312145,
+                                                              -0.8862035792312145,
+                                                              0.46329603511986217,
+                                                              29.06767649409735,
+                                                              -8.290603334655817,
+                                                            ]
+                                                          }
+                                                          propList={
+                                                            [
+                                                              "fill",
+                                                            ]
+                                                          }
+                                                          width={32}
+                                                          x={0}
+                                                          y={0}
+                                                        />
+                                                        <RNSVGRect
+                                                          fill={
+                                                            {
+                                                              "payload": 4280576225,
+                                                              "type": 0,
+                                                            }
+                                                          }
+                                                          height={32}
+                                                          matrix={
+                                                            [
+                                                              -0.5778576243835052,
+                                                              0.8161375900801603,
+                                                              -0.8161375900801603,
+                                                              -0.5778576243835052,
+                                                              51.62016714634118,
+                                                              17.239003094412087,
+                                                            ]
+                                                          }
+                                                          propList={
+                                                            [
+                                                              "fill",
+                                                            ]
+                                                          }
+                                                          width={32}
+                                                          x={0}
+                                                          y={0}
+                                                        />
+                                                        <RNSVGRect
+                                                          fill={
+                                                            {
+                                                              "payload": 4278407261,
+                                                              "type": 0,
+                                                            }
+                                                          }
+                                                          height={32}
+                                                          matrix={
+                                                            [
+                                                              0.7046342099635947,
+                                                              -0.7095707365365209,
+                                                              0.7095707365365209,
+                                                              0.7046342099635947,
+                                                              -25.225718686778755,
+                                                              -4.611026307883787,
+                                                            ]
+                                                          }
+                                                          propList={
+                                                            [
+                                                              "fill",
+                                                            ]
+                                                          }
+                                                          width={32}
+                                                          x={0}
+                                                          y={0}
+                                                        />
+                                                      </RNSVGGroup>
+                                                    </RNSVGSvgView>
+                                                  </View>
+                                                </View>
+                                                <View
+                                                  style={
+                                                    {
+                                                      "alignItems": "flex-start",
+                                                      "flex": 1,
+                                                    }
+                                                  }
+                                                >
+                                                  <Text
+                                                    accessibilityRole="text"
+                                                    numberOfLines={1}
+                                                    style={
+                                                      {
+                                                        "color": "#121314",
+                                                        "fontFamily": "Geist Medium",
+                                                        "fontSize": 16,
+                                                        "fontWeight": "500",
+                                                        "letterSpacing": 0,
+                                                        "lineHeight": 24,
+                                                      }
+                                                    }
+                                                    testID="cellbase-avatar-title"
+                                                  >
+                                                    Account 1
+                                                  </Text>
+                                                  <View
+                                                    style={
+                                                      {
+                                                        "alignItems": "flex-start",
+                                                        "flexDirection": "row",
+                                                        "marginBottom": 0,
+                                                        "zIndex": 1,
+                                                      }
+                                                    }
+                                                  >
+                                                    <Text
+                                                      accessibilityRole="text"
+                                                      numberOfLines={1}
+                                                      style={
+                                                        {
+                                                          "color": "#686e7d",
+                                                          "fontFamily": "Geist Regular",
+                                                          "fontSize": 16,
+                                                          "letterSpacing": 0,
+                                                          "lineHeight": 24,
+                                                        }
+                                                      }
+                                                    >
+                                                      0xC4955...4D272
+                                                    </Text>
+                                                  </View>
+                                                </View>
+                                              </View>
+                                            </View>
+                                          </View>
+                                        </TouchableOpacity>
+                                        <View
+                                          style={
+                                            {
+                                              "paddingRight": 20,
+                                            }
+                                          }
+                                        >
+                                          <TouchableOpacity
+                                            accessibilityRole="button"
+                                            accessible={true}
+                                            activeOpacity={1}
+                                            disabled={false}
+                                            onPress={[Function]}
+                                            onPressIn={[Function]}
+                                            onPressOut={[Function]}
+                                            style={
+                                              {
+                                                "alignItems": "center",
+                                                "borderRadius": 8,
+                                                "height": 24,
+                                                "justifyContent": "center",
+                                                "opacity": 1,
+                                                "width": 24,
+                                              }
+                                            }
+                                            testID="main-wallet-account-actions"
+                                          >
+                                            <SvgMock
+                                              color="#121314"
+                                              fill="currentColor"
+                                              height={16}
+                                              name="MoreVertical"
+                                              style={
+                                                {
+                                                  "height": 16,
+                                                  "width": 16,
+                                                }
+                                              }
+                                              width={16}
+                                            />
+                                          </TouchableOpacity>
+                                        </View>
+                                      </View>
+                                    </View>
+                                    <View
+                                      index={1}
+                                      onLayout={[Function]}
+                                      style={
+                                        {
+                                          "flexDirection": "column",
+                                          "height": undefined,
+                                          "left": 0,
+                                          "maxHeight": undefined,
+                                          "maxWidth": undefined,
+                                          "minHeight": undefined,
+                                          "minWidth": undefined,
+                                          "position": "absolute",
+                                          "top": 0,
+                                          "width": 0,
+                                        }
+                                      }
+                                    >
+                                      <View
+                                        style={
+                                          {
+                                            "alignItems": "center",
+                                            "backgroundColor": "#ffffff",
+                                            "flexDirection": "row",
+                                          }
+                                        }
+                                      >
+                                        <TouchableOpacity
+                                          onLongPress={[Function]}
+                                          onPress={[Function]}
+                                          style={
+                                            {
+                                              "alignItems": "center",
+                                              "flex": 1,
+                                              "opacity": 1,
+                                              "padding": 16,
+                                              "position": "relative",
+                                              "zIndex": 1,
+                                            }
+                                          }
+                                          testID="select-with-menu"
+                                        >
+                                          <View
+                                            accessibilityRole="none"
+                                            accessible={true}
+                                            style={
+                                              {
+                                                "alignItems": "flex-start",
+                                                "flexDirection": "column",
+                                                "padding": 16,
+                                                "paddingBottom": 0,
+                                                "paddingLeft": 0,
+                                                "paddingRight": 0,
+                                                "paddingTop": 0,
+                                                "zIndex": 2,
+                                              }
+                                            }
+                                          >
+                                            <View
+                                              style={
+                                                {
+                                                  "alignItems": "center",
+                                                  "flexDirection": "row",
+                                                }
+                                              }
+                                            >
+                                              <View
+                                                style={
+                                                  {
+                                                    "alignItems": "center",
+                                                    "flexDirection": "row",
+                                                    "opacity": 1,
+                                                  }
+                                                }
+                                              >
+                                                <View
+                                                  style={
+                                                    {
+                                                      "backgroundColor": "#ffffff",
+                                                      "borderRadius": 8,
+                                                      "height": 32,
+                                                      "marginRight": 16,
+                                                      "overflow": "hidden",
+                                                      "width": 32,
+                                                    }
+                                                  }
+                                                  testID="cellbase-avatar"
+                                                >
+                                                  <View
+                                                    style={
+                                                      [
+                                                        {
+                                                          "overflow": "hidden",
+                                                        },
+                                                        {
+                                                          "backgroundColor": "#FC4800",
+                                                          "borderRadius": 16,
+                                                          "height": 32,
+                                                          "width": 32,
+                                                        },
+                                                        {
+                                                          "borderRadius": 8,
+                                                        },
+                                                      ]
+                                                    }
+                                                  >
+                                                    <RNSVGSvgView
+                                                      bbHeight={32}
+                                                      bbWidth={32}
+                                                      focusable={false}
+                                                      height={32}
+                                                      style={
+                                                        [
+                                                          {
+                                                            "backgroundColor": "transparent",
+                                                            "borderWidth": 0,
+                                                          },
+                                                          {
+                                                            "flex": 0,
+                                                            "height": 32,
+                                                            "width": 32,
+                                                          },
+                                                        ]
+                                                      }
+                                                      width={32}
+                                                    >
+                                                      <RNSVGGroup
+                                                        fill={
+                                                          {
+                                                            "payload": 4278190080,
+                                                            "type": 0,
+                                                          }
+                                                        }
+                                                      >
+                                                        <RNSVGRect
+                                                          fill={
+                                                            {
+                                                              "payload": 4278291575,
+                                                              "type": 0,
+                                                            }
+                                                          }
+                                                          height={32}
+                                                          matrix={
+                                                            [
+                                                              -0.41310442982454204,
+                                                              -0.910683660806177,
+                                                              0.910683660806177,
+                                                              -0.41310442982454204,
+                                                              8.80960563430791,
+                                                              40.3361680482215,
+                                                            ]
+                                                          }
+                                                          propList={
+                                                            [
+                                                              "fill",
+                                                            ]
+                                                          }
+                                                          width={32}
+                                                          x={0}
+                                                          y={0}
+                                                        />
+                                                        <RNSVGRect
+                                                          fill={
+                                                            {
+                                                              "payload": 4278410587,
+                                                              "type": 0,
+                                                            }
+                                                          }
+                                                          height={32}
+                                                          matrix={
+                                                            [
+                                                              0.903335292863301,
+                                                              -0.42893513340314526,
+                                                              0.42893513340314526,
+                                                              0.903335292863301,
+                                                              -18.594021578605165,
+                                                              6.725269324133852,
+                                                            ]
+                                                          }
+                                                          propList={
+                                                            [
+                                                              "fill",
+                                                            ]
+                                                          }
+                                                          width={32}
+                                                          x={0}
+                                                          y={0}
+                                                        />
+                                                        <RNSVGRect
+                                                          fill={
+                                                            {
+                                                              "payload": 4294382337,
+                                                              "type": 0,
+                                                            }
+                                                          }
+                                                          height={32}
+                                                          matrix={
+                                                            [
+                                                              -0.6921431738704069,
+                                                              -0.7217602280983622,
+                                                              0.7217602280983622,
+                                                              -0.6921431738704069,
+                                                              -12.339279260280694,
+                                                              30.41598471866334,
+                                                            ]
+                                                          }
+                                                          propList={
+                                                            [
+                                                              "fill",
+                                                            ]
+                                                          }
+                                                          width={32}
+                                                          x={0}
+                                                          y={0}
+                                                        />
+                                                      </RNSVGGroup>
+                                                    </RNSVGSvgView>
+                                                  </View>
+                                                </View>
+                                                <View
+                                                  style={
+                                                    {
+                                                      "alignItems": "flex-start",
+                                                      "flex": 1,
+                                                    }
+                                                  }
+                                                >
+                                                  <Text
+                                                    accessibilityRole="text"
+                                                    numberOfLines={1}
+                                                    style={
+                                                      {
+                                                        "color": "#121314",
+                                                        "fontFamily": "Geist Medium",
+                                                        "fontSize": 16,
+                                                        "fontWeight": "500",
+                                                        "letterSpacing": 0,
+                                                        "lineHeight": 24,
+                                                      }
+                                                    }
+                                                    testID="cellbase-avatar-title"
+                                                  >
+                                                    test.eth
+                                                  </Text>
+                                                  <View
+                                                    style={
+                                                      {
+                                                        "alignItems": "flex-start",
+                                                        "flexDirection": "row",
+                                                        "marginBottom": 0,
+                                                        "zIndex": 1,
+                                                      }
+                                                    }
+                                                  >
+                                                    <Text
+                                                      accessibilityRole="text"
+                                                      numberOfLines={1}
+                                                      style={
+                                                        {
+                                                          "color": "#686e7d",
+                                                          "fontFamily": "Geist Regular",
+                                                          "fontSize": 16,
+                                                          "letterSpacing": 0,
+                                                          "lineHeight": 24,
+                                                        }
+                                                      }
+                                                    >
+                                                      0xC4966...4a756
+                                                    </Text>
+                                                  </View>
+                                                </View>
+                                              </View>
+                                            </View>
+                                          </View>
+                                        </TouchableOpacity>
+                                        <View
+                                          style={
+                                            {
+                                              "paddingRight": 20,
+                                            }
+                                          }
+                                        >
+                                          <TouchableOpacity
+                                            accessibilityRole="button"
+                                            accessible={true}
+                                            activeOpacity={1}
+                                            disabled={false}
+                                            onPress={[Function]}
+                                            onPressIn={[Function]}
+                                            onPressOut={[Function]}
+                                            style={
+                                              {
+                                                "alignItems": "center",
+                                                "borderRadius": 8,
+                                                "height": 24,
+                                                "justifyContent": "center",
+                                                "opacity": 1,
+                                                "width": 24,
+                                              }
+                                            }
+                                            testID="main-wallet-account-actions"
+                                          >
+                                            <SvgMock
+                                              color="#121314"
+                                              fill="currentColor"
+                                              height={16}
+                                              name="MoreVertical"
+                                              style={
+                                                {
+                                                  "height": 16,
+                                                  "width": 16,
+                                                }
+                                              }
+                                              width={16}
+                                            />
+                                          </TouchableOpacity>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  </View>
+                                </View>
+                              </RCTScrollView>
+                            </View>
+                          </View>
+                          <View
+                            style={
+                              {
+                                "backgroundColor": "#ffffff",
+                                "flexDirection": "row",
+                                "marginHorizontal": 16,
+                                "marginVertical": 16,
+                                "paddingHorizontal": 8,
+                                "paddingVertical": 4,
+                              }
+                            }
+                            testID="bottomsheetfooter"
                           >
                             <TouchableOpacity
                               accessibilityRole="button"
@@ -503,13 +1205,15 @@ exports[`AccountSelector should render correctly 1`] = `
                                 {
                                   "alignItems": "center",
                                   "alignSelf": "stretch",
-                                  "backgroundColor": "transparent",
-                                  "borderColor": "#0376c9",
-                                  "borderRadius": 24,
+                                  "backgroundColor": "#3c4d9d0f",
+                                  "borderColor": "transparent",
+                                  "borderRadius": 12,
                                   "borderWidth": 1,
+                                  "flex": 1,
                                   "flexDirection": "row",
                                   "height": 48,
                                   "justifyContent": "center",
+                                  "overflow": "hidden",
                                   "paddingHorizontal": 16,
                                 }
                               }
@@ -519,12 +1223,11 @@ exports[`AccountSelector should render correctly 1`] = `
                                 accessibilityRole="text"
                                 style={
                                   {
-                                    "color": "#0376c9",
-                                    "fontFamily": "EuclidCircularB-Medium",
-                                    "fontSize": 14,
-                                    "fontWeight": "500",
+                                    "color": "#121314",
+                                    "fontFamily": "Geist Medium",
+                                    "fontSize": 16,
                                     "letterSpacing": 0,
-                                    "lineHeight": 22,
+                                    "lineHeight": 24,
                                   }
                                 }
                               >

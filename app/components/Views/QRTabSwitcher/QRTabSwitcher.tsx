@@ -14,6 +14,7 @@ import ButtonIcon, {
 } from '../../../component-library/components/Buttons/ButtonIcon';
 import { IconName } from '../../../component-library/components/Icons/Icon';
 import HeaderBase from '../../../component-library/components/HeaderBase';
+import { endTrace, trace, TraceName } from '../../../util/trace';
 
 export enum QRTabSwitcherScreens {
   Scanner,
@@ -48,12 +49,20 @@ export interface QRTabSwitcherParams {
   initialScreen?: QRTabSwitcherScreens;
   disableTabber?: boolean;
   origin?: string;
+  networkName?: string;
 }
 
 export const createQRScannerNavDetails =
   createNavigationDetails<QRTabSwitcherParams>(Routes.QR_TAB_SWITCHER);
 
 const QRTabSwitcher = () => {
+  // Start tracing component loading
+  const isFirstRender = useRef(true);
+
+  if (isFirstRender.current) {
+    trace({ name: TraceName.QRTabSwitcher });
+  }
+
   const route = useRoute();
   const {
     onScanError,
@@ -62,6 +71,7 @@ const QRTabSwitcher = () => {
     initialScreen,
     origin,
     disableTabber,
+    networkName,
   } = route.params as QRTabSwitcherParams;
 
   const [selectedIndex, setSelectedIndex] = useState(
@@ -72,6 +82,12 @@ const QRTabSwitcher = () => {
   const styles = createStyles(theme);
 
   const animatedValue = useRef(new Animated.Value(selectedIndex)).current;
+
+  // End trace when component has finished initial loading
+  useEffect(() => {
+    endTrace({ name: TraceName.QRTabSwitcher });
+    isFirstRender.current = false;
+  }, []);
 
   useEffect(() => {
     Animated.timing(animatedValue, {
@@ -120,6 +136,7 @@ const QRTabSwitcher = () => {
 
       <View style={styles.overlay}>
         <HeaderBase
+          style={styles.header}
           endAccessory={
             <ButtonIcon
               iconName={IconName.Close}
@@ -129,6 +146,7 @@ const QRTabSwitcher = () => {
           }
         >
           {selectedIndex === QRTabSwitcherScreens.Receive ? (
+            // @ts-expect-error proptypes components requires ts-expect-error
             <NavbarTitle
               // @ts-expect-error proptypes components requires ts-expect-error
               title={strings(`receive.title`)}
@@ -136,6 +154,8 @@ const QRTabSwitcher = () => {
               translate={false}
               // @ts-expect-error proptypes components requires ts-expect-error
               disableNetwork
+              // @ts-expect-error proptypes components requires ts-expect-error
+              networkName={networkName}
             />
           ) : null}
         </HeaderBase>

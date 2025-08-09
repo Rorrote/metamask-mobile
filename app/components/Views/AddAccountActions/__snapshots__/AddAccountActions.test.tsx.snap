@@ -150,7 +150,13 @@ exports[`AddAccountActions renders correctly 1`] = `
             "top": -1,
           }
         }
+        onGestureCancel={[Function]}
         pointerEvents="box-none"
+        sheetAllowedDetents="large"
+        sheetCornerRadius={-1}
+        sheetExpandsWhenScrolledToEdge={true}
+        sheetGrabberVisible={false}
+        sheetLargestUndimmedDetent="all"
         style={
           {
             "bottom": 0,
@@ -158,6 +164,7 @@ exports[`AddAccountActions renders correctly 1`] = `
             "position": "absolute",
             "right": 0,
             "top": 0,
+            "zIndex": undefined,
           }
         }
       >
@@ -234,6 +241,9 @@ exports[`AddAccountActions renders correctly 1`] = `
           >
             <View
               collapsable={false}
+              enabled={false}
+              handlerTag={-1}
+              handlerType="PanGestureHandler"
               onGestureHandlerEvent={[Function]}
               onGestureHandlerStateChange={[Function]}
               style={
@@ -342,7 +352,8 @@ exports[`AddAccountActions renders correctly 1`] = `
                             testID="sheet-header-back-button"
                           >
                             <SvgMock
-                              color="#141618"
+                              color="#121314"
+                              fill="currentColor"
                               height={16}
                               name="ArrowLeft"
                               style={
@@ -359,16 +370,15 @@ exports[`AddAccountActions renders correctly 1`] = `
                           accessibilityRole="text"
                           style={
                             {
-                              "color": "#141618",
-                              "fontFamily": "EuclidCircularB-Bold",
+                              "color": "#121314",
+                              "fontFamily": "Geist Bold",
                               "fontSize": 18,
-                              "fontWeight": "700",
                               "letterSpacing": 0,
                               "lineHeight": 24,
                             }
                           }
                         >
-                          Add account
+                          Create a new account
                         </Text>
                         <View
                           style={
@@ -380,6 +390,22 @@ exports[`AddAccountActions renders correctly 1`] = `
                         />
                       </View>
                       <View>
+                        <Text
+                          accessibilityRole="text"
+                          style={
+                            {
+                              "color": "#686e7d",
+                              "fontFamily": "Geist Medium",
+                              "fontSize": 14,
+                              "letterSpacing": 0,
+                              "lineHeight": 22,
+                              "marginVertical": 16,
+                              "paddingHorizontal": 16,
+                            }
+                          }
+                        >
+                          Create a new account
+                        </Text>
                         <TouchableOpacity
                           disabled={false}
                           onPress={[Function]}
@@ -387,19 +413,20 @@ exports[`AddAccountActions renders correctly 1`] = `
                             {
                               "alignItems": "center",
                               "flexDirection": "row",
-                              "paddingVertical": 16,
+                              "paddingVertical": 8,
                               "width": "100%",
                             }
                           }
                           testID="add-account-new-account"
                         >
                           <SvgMock
-                            color="#141618"
+                            color="#121314"
+                            fill="currentColor"
                             height={20}
                             name="Add"
                             style={
                               {
-                                "color": "#141618",
+                                "color": "#121314",
                                 "height": 20,
                                 "marginHorizontal": 16,
                                 "width": 20,
@@ -411,16 +438,15 @@ exports[`AddAccountActions renders correctly 1`] = `
                             accessibilityRole="text"
                             style={
                               {
-                                "color": "#141618",
-                                "fontFamily": "EuclidCircularB-Medium",
-                                "fontSize": 16,
-                                "fontWeight": "500",
+                                "color": "#121314",
+                                "fontFamily": "Geist Medium",
+                                "fontSize": 18,
                                 "letterSpacing": 0,
                                 "lineHeight": 24,
                               }
                             }
                           >
-                            Add new account
+                            Ethereum account
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -430,19 +456,20 @@ exports[`AddAccountActions renders correctly 1`] = `
                             {
                               "alignItems": "center",
                               "flexDirection": "row",
-                              "paddingVertical": 16,
+                              "paddingVertical": 8,
                               "width": "100%",
                             }
                           }
                           testID="add-account-add-solana-account"
                         >
                           <SvgMock
-                            color="#141618"
+                            color="#121314"
+                            fill="currentColor"
                             height={20}
                             name="Add"
                             style={
                               {
-                                "color": "#141618",
+                                "color": "#121314",
                                 "height": 20,
                                 "marginHorizontal": 16,
                                 "width": 20,
@@ -454,16 +481,15 @@ exports[`AddAccountActions renders correctly 1`] = `
                             accessibilityRole="text"
                             style={
                               {
-                                "color": "#141618",
-                                "fontFamily": "EuclidCircularB-Medium",
-                                "fontSize": 16,
-                                "fontWeight": "500",
+                                "color": "#121314",
+                                "fontFamily": "Geist Medium",
+                                "fontSize": 18,
                                 "letterSpacing": 0,
                                 "lineHeight": 24,
                               }
                             }
                           >
-                            Add a new Solana Account (Beta)
+                            Solana account
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -473,19 +499,20 @@ exports[`AddAccountActions renders correctly 1`] = `
                             {
                               "alignItems": "center",
                               "flexDirection": "row",
-                              "paddingVertical": 16,
+                              "paddingVertical": 8,
                               "width": "100%",
                             }
                           }
                           testID="add-account-add-bitcoin-account"
                         >
                           <SvgMock
-                            color="#141618"
+                            color="#121314"
+                            fill="currentColor"
                             height={20}
                             name="Add"
                             style={
                               {
-                                "color": "#141618",
+                                "color": "#121314",
                                 "height": 20,
                                 "marginHorizontal": 16,
                                 "width": 20,
@@ -497,18 +524,33 @@ exports[`AddAccountActions renders correctly 1`] = `
                             accessibilityRole="text"
                             style={
                               {
-                                "color": "#141618",
-                                "fontFamily": "EuclidCircularB-Medium",
-                                "fontSize": 16,
-                                "fontWeight": "500",
+                                "color": "#121314",
+                                "fontFamily": "Geist Medium",
+                                "fontSize": 18,
                                 "letterSpacing": 0,
                                 "lineHeight": 24,
                               }
                             }
                           >
-                            Add a new Bitcoin Account (Beta)
+                            Bitcoin account
                           </Text>
                         </TouchableOpacity>
+                        <Text
+                          accessibilityRole="text"
+                          style={
+                            {
+                              "color": "#686e7d",
+                              "fontFamily": "Geist Medium",
+                              "fontSize": 14,
+                              "letterSpacing": 0,
+                              "lineHeight": 22,
+                              "marginVertical": 16,
+                              "paddingHorizontal": 16,
+                            }
+                          }
+                        >
+                          Import a wallet or account
+                        </Text>
                         <TouchableOpacity
                           disabled={false}
                           onPress={[Function]}
@@ -516,19 +558,20 @@ exports[`AddAccountActions renders correctly 1`] = `
                             {
                               "alignItems": "center",
                               "flexDirection": "row",
-                              "paddingVertical": 16,
+                              "paddingVertical": 8,
                               "width": "100%",
                             }
                           }
-                          testID="add-account-add-bitcoin-testnet-account"
+                          testID="add-account-srp-account"
                         >
                           <SvgMock
-                            color="#141618"
+                            color="#121314"
+                            fill="currentColor"
                             height={20}
-                            name="Add"
+                            name="Wallet"
                             style={
                               {
-                                "color": "#141618",
+                                "color": "#121314",
                                 "height": 20,
                                 "marginHorizontal": 16,
                                 "width": 20,
@@ -540,16 +583,15 @@ exports[`AddAccountActions renders correctly 1`] = `
                             accessibilityRole="text"
                             style={
                               {
-                                "color": "#141618",
-                                "fontFamily": "EuclidCircularB-Medium",
-                                "fontSize": 16,
-                                "fontWeight": "500",
+                                "color": "#121314",
+                                "fontFamily": "Geist Medium",
+                                "fontSize": 18,
                                 "letterSpacing": 0,
                                 "lineHeight": 24,
                               }
                             }
                           >
-                            Add a new Bitcoin Account (Testnet)
+                            Secret Recovery Phrase
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -559,19 +601,20 @@ exports[`AddAccountActions renders correctly 1`] = `
                             {
                               "alignItems": "center",
                               "flexDirection": "row",
-                              "paddingVertical": 16,
+                              "paddingVertical": 8,
                               "width": "100%",
                             }
                           }
                           testID="add-account-import-account"
                         >
                           <SvgMock
-                            color="#141618"
+                            color="#121314"
+                            fill="currentColor"
                             height={20}
-                            name="Import"
+                            name="Key"
                             style={
                               {
-                                "color": "#141618",
+                                "color": "#121314",
                                 "height": 20,
                                 "marginHorizontal": 16,
                                 "width": 20,
@@ -583,18 +626,33 @@ exports[`AddAccountActions renders correctly 1`] = `
                             accessibilityRole="text"
                             style={
                               {
-                                "color": "#141618",
-                                "fontFamily": "EuclidCircularB-Medium",
-                                "fontSize": 16,
-                                "fontWeight": "500",
+                                "color": "#121314",
+                                "fontFamily": "Geist Medium",
+                                "fontSize": 18,
                                 "letterSpacing": 0,
                                 "lineHeight": 24,
                               }
                             }
                           >
-                            Import account
+                            Private key
                           </Text>
                         </TouchableOpacity>
+                        <Text
+                          accessibilityRole="text"
+                          style={
+                            {
+                              "color": "#686e7d",
+                              "fontFamily": "Geist Medium",
+                              "fontSize": 14,
+                              "letterSpacing": 0,
+                              "lineHeight": 22,
+                              "marginVertical": 16,
+                              "paddingHorizontal": 16,
+                            }
+                          }
+                        >
+                          Connect an account
+                        </Text>
                         <TouchableOpacity
                           disabled={false}
                           onPress={[Function]}
@@ -602,19 +660,20 @@ exports[`AddAccountActions renders correctly 1`] = `
                             {
                               "alignItems": "center",
                               "flexDirection": "row",
-                              "paddingVertical": 16,
+                              "paddingVertical": 8,
                               "width": "100%",
                             }
                           }
                           testID="add-account-add-hardware-wallet"
                         >
                           <SvgMock
-                            color="#141618"
+                            color="#121314"
+                            fill="currentColor"
                             height={20}
                             name="Hardware"
                             style={
                               {
-                                "color": "#141618",
+                                "color": "#121314",
                                 "height": 20,
                                 "marginHorizontal": 16,
                                 "width": 20,
@@ -626,16 +685,15 @@ exports[`AddAccountActions renders correctly 1`] = `
                             accessibilityRole="text"
                             style={
                               {
-                                "color": "#141618",
-                                "fontFamily": "EuclidCircularB-Medium",
-                                "fontSize": 16,
-                                "fontWeight": "500",
+                                "color": "#121314",
+                                "fontFamily": "Geist Medium",
+                                "fontSize": 18,
                                 "letterSpacing": 0,
                                 "lineHeight": 24,
                               }
                             }
                           >
-                            Add hardware wallet
+                            Hardware wallet
                           </Text>
                         </TouchableOpacity>
                       </View>

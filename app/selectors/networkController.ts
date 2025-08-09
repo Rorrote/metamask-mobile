@@ -1,5 +1,5 @@
-import { Hex } from '@metamask/utils';
-import { createSelector } from 'reselect';
+import { CaipChainId, Hex } from '@metamask/utils';
+import { createSelector, weakMapMemoize } from 'reselect';
 import { InfuraNetworkType } from '@metamask/controller-utils';
 import {
   BuiltInNetworkClientId,
@@ -15,6 +15,20 @@ import { selectTokenNetworkFilter } from './preferencesController';
 import { enableAllNetworksFilter } from '../components/UI/Tokens/util/enableAllNetworksFilter';
 import { PopularList } from '../util/networks/customNetworks';
 import { CHAIN_IDS } from '@metamask/transaction-controller';
+import {
+  selectNonEvmNetworkConfigurationsByChainId,
+  selectIsEvmNetworkSelected,
+  selectSelectedNonEvmNetworkChainId,
+  selectSelectedNonEvmNetworkSymbol,
+} from './multichainNetworkController';
+import { MultichainNetworkConfiguration } from '@metamask/multichain-network-controller';
+
+export type EvmAndMultichainNetworkConfigurationsWithCaipChainId = (
+  | NetworkConfiguration
+  | MultichainNetworkConfiguration
+) & {
+  caipChainId: CaipChainId;
+};
 
 interface InfuraRpcEndpoint {
   name?: string;
@@ -122,15 +136,32 @@ export const selectProviderConfig = createDeepEqualSelector(
   },
 );
 
-export const selectTicker = createSelector(
+export const selectEvmTicker = createDeepEqualSelector(
   selectProviderConfig,
   (providerConfig) => providerConfig?.ticker,
 );
 
-export const selectChainId = createSelector(
+export const selectTicker = createSelector(
+  selectEvmTicker,
+  selectSelectedNonEvmNetworkSymbol,
+  selectIsEvmNetworkSelected,
+  (evmTicker, nonEvmTicker, isEvmSelected) =>
+    isEvmSelected ? evmTicker : nonEvmTicker,
+);
+
+export const selectEvmChainId = createSelector(
   selectProviderConfig,
   (providerConfig) => providerConfig.chainId,
 );
+
+export const selectChainId = createDeepEqualSelector(
+  selectSelectedNonEvmNetworkChainId,
+  selectEvmChainId,
+  selectIsEvmNetworkSelected,
+  (selectedNonEvmChainId, selectedEvmChainId: Hex, isEvmSelected: boolean) =>
+    !isEvmSelected ? selectedNonEvmChainId : selectedEvmChainId,
+);
+
 export const selectProviderType = createSelector(
   selectProviderConfig,
   (providerConfig) => providerConfig.type,
@@ -152,10 +183,98 @@ export const selectNetworkStatus = createSelector(
     ].status,
 );
 
-export const selectNetworkConfigurations = createSelector(
+export const selectEvmNetworkConfigurationsByChainId = createSelector(
   selectNetworkControllerState,
   (networkControllerState: NetworkState) =>
     networkControllerState?.networkConfigurationsByChainId,
+);
+
+export const selectNetworkConfigurations = createDeepEqualSelector(
+  selectEvmNetworkConfigurationsByChainId,
+  selectNonEvmNetworkConfigurationsByChainId,
+  (
+    evmNetworkConfigurationsByChainId,
+    nonEvmNetworkConfigurationsByChainId,
+  ): Record<string, MultichainNetworkConfiguration> => {
+    const networkConfigurationsByChainId = {
+      ...evmNetworkConfigurationsByChainId,
+      ...nonEvmNetworkConfigurationsByChainId,
+    };
+    return networkConfigurationsByChainId;
+  },
+);
+
+/**
+ * Gets EVM (and eventually non-EVM) Network Configurations keyed by CaipChainId.
+ *
+ * @returns network configurations keyed by CaipChainId.
+ */
+export const getNetworkConfigurationsByCaipChainId = (
+  evmNetworkConfigurationsByChainId: Record<Hex, NetworkConfiguration>,
+  nonEvmNetworkConfigurationsByChainId: Record<
+    Hex,
+    MultichainNetworkConfiguration
+  >,
+): Record<
+  CaipChainId,
+  EvmAndMultichainNetworkConfigurationsWithCaipChainId
+> => {
+  const networkConfigurationsByCaipChainId: Record<
+    CaipChainId,
+    EvmAndMultichainNetworkConfigurationsWithCaipChainId
+  > = {};
+
+  Object.entries(evmNetworkConfigurationsByChainId).forEach(
+    ([chainId, networkConfiguration]) => {
+      const caipChainId: CaipChainId = `eip155:${parseInt(chainId, 16)}`;
+      networkConfigurationsByCaipChainId[caipChainId] = {
+        ...networkConfiguration,
+        caipChainId,
+      };
+    },
+  );
+
+  Object.entries(nonEvmNetworkConfigurationsByChainId || {}).forEach(
+    ([_caipChainId, networkConfiguration]) => {
+      const caipChainId = _caipChainId as CaipChainId;
+      networkConfigurationsByCaipChainId[caipChainId] = {
+        ...networkConfiguration,
+        caipChainId,
+      };
+    },
+  );
+
+  return networkConfigurationsByCaipChainId;
+};
+
+export const selectNetworkConfigurationsByCaipChainId = createSelector(
+  selectEvmNetworkConfigurationsByChainId,
+  selectNonEvmNetworkConfigurationsByChainId,
+  (
+    evmNetworkConfigurationsByChainId,
+    nonEvmNetworkConfigurationsByChainId,
+  ): Record<
+    CaipChainId,
+    EvmAndMultichainNetworkConfigurationsWithCaipChainId
+  > =>
+    getNetworkConfigurationsByCaipChainId(
+      evmNetworkConfigurationsByChainId,
+      nonEvmNetworkConfigurationsByChainId,
+    ),
+);
+
+export const selectNativeNetworkCurrencies = createDeepEqualSelector(
+  selectNetworkConfigurations,
+  (networkConfigurationsByChainId) => {
+    const nativeCurrencies = [
+      ...new Set(
+        Object.values(networkConfigurationsByChainId).map(
+          (n) => n.nativeCurrency,
+        ),
+      ),
+    ];
+    return nativeCurrencies;
+  },
 );
 
 export const selectNetworkClientId = createSelector(
@@ -174,8 +293,8 @@ export const selectIsEIP1559Network = createSelector(
 
 // Selector to get the popular network configurations, this filter also testnet networks
 export const selectAllPopularNetworkConfigurations = createSelector(
-  selectNetworkConfigurations,
-  (networkConfigurations: Record<Hex, NetworkConfiguration>) => {
+  selectEvmNetworkConfigurationsByChainId,
+  (networkConfigurations) => {
     const popularNetworksChainIds = PopularList.map(
       (popular) => popular.chainId,
     );
@@ -187,8 +306,8 @@ export const selectAllPopularNetworkConfigurations = createSelector(
           chainId === CHAIN_IDS.MAINNET ||
           chainId === CHAIN_IDS.LINEA_MAINNET,
       )
-      .reduce((acc: Record<Hex, NetworkConfiguration>, chainId) => {
-        acc[chainId as Hex] = networkConfigurations[chainId as Hex];
+      .reduce<Record<string, NetworkConfiguration>>((acc, chainId) => {
+        acc[chainId] = networkConfigurations[chainId as Hex];
         return acc;
       }, {});
   },
@@ -217,21 +336,28 @@ export const selectIsAllNetworks = createSelector(
 );
 
 export const selectNetworkConfigurationByChainId = createSelector(
-  [selectNetworkConfigurations, (_state: RootState, chainId: Hex) => chainId],
+  [selectNetworkConfigurations, (_state: RootState, chainId) => chainId],
   (networkConfigurations, chainId) => networkConfigurations?.[chainId] || null,
+  {
+    argsMemoize: weakMapMemoize,
+    memoize: weakMapMemoize,
+  },
 );
 
 export const selectNativeCurrencyByChainId = createSelector(
-  [selectNetworkConfigurations, (_state: RootState, chainId: Hex) => chainId],
+  [
+    selectEvmNetworkConfigurationsByChainId,
+    (_state: RootState, chainId) => chainId,
+  ],
   (networkConfigurations, chainId) =>
     networkConfigurations?.[chainId]?.nativeCurrency,
 );
 
 export const selectDefaultEndpointByChainId = createSelector(
-  selectNetworkConfigurations,
+  selectEvmNetworkConfigurationsByChainId,
   (_: RootState, chainId: Hex) => chainId,
   (networkConfigurations, chainId) => {
-    const networkConfiguration = networkConfigurations[chainId as Hex];
+    const networkConfiguration = networkConfigurations[chainId];
     return networkConfiguration?.rpcEndpoints?.[
       networkConfiguration.defaultRpcEndpointIndex
     ];
@@ -247,4 +373,25 @@ export const selectProviderTypeByChainId = createSelector(
 export const selectRpcUrlByChainId = createSelector(
   selectDefaultEndpointByChainId,
   (defaultEndpoint) => defaultEndpoint?.url,
+);
+
+export const selectTickerByChainId = createSelector(
+  [selectNetworkConfigurations, (_state: RootState, chainId: Hex) => chainId],
+  (networkConfigurations, chainId) =>
+    networkConfigurations?.[chainId]?.nativeCurrency,
+);
+
+export const checkNetworkAndAccountSupports1559 = createSelector(
+  selectNetworkControllerState,
+  (_state: RootState, networkClientId: string) => networkClientId,
+  (networkControllerState: NetworkState, networkClientId: string) => {
+    const selectedNetworkClientId =
+      networkControllerState.selectedNetworkClientId;
+
+    return (
+      networkControllerState.networksMetadata?.[
+        networkClientId ?? selectedNetworkClientId
+      ]?.EIPS[1559] === true
+    );
+  },
 );

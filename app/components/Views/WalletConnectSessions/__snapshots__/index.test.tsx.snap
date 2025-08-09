@@ -116,39 +116,87 @@ exports[`WalletConnectSessions does not render when not ready 1`] = `
                 }
               }
             >
-              <TouchableOpacity
-                accessible={true}
-                activeOpacity={1}
-                disabled={false}
-                onPress={[Function]}
-                onPressIn={[Function]}
-                onPressOut={[Function]}
+              <View
                 style={
-                  {
-                    "alignItems": "center",
-                    "borderRadius": 8,
-                    "height": 32,
-                    "justifyContent": "center",
-                    "marginHorizontal": 16,
-                    "opacity": 1,
-                    "width": 32,
-                  }
-                }
-                testID="back-arrow-button"
-              >
-                <SvgMock
-                  color="#141618"
-                  height={24}
-                  name="ArrowLeft"
-                  style={
+                  [
                     {
-                      "height": 24,
-                      "width": 24,
+                      "transform": [
+                        {
+                          "scale": 1,
+                        },
+                      ],
+                    },
+                    {
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                    },
+                  ]
+                }
+              >
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": false,
+                      "expanded": undefined,
+                      "selected": undefined,
                     }
                   }
-                  width={24}
-                />
-              </TouchableOpacity>
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onBlur={[Function]}
+                  onClick={[Function]}
+                  onFocus={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    [
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "transparent",
+                        "borderRadius": 2,
+                        "height": 40,
+                        "justifyContent": "center",
+                        "opacity": 1,
+                        "width": 40,
+                      },
+                      {
+                        "marginHorizontal": 16,
+                      },
+                    ]
+                  }
+                  testID="back-arrow-button"
+                >
+                  <SvgMock
+                    fill="currentColor"
+                    name="ArrowLeft"
+                    style={
+                      [
+                        {
+                          "color": "#121314",
+                          "height": 24,
+                          "width": 24,
+                        },
+                        undefined,
+                      ]
+                    }
+                  />
+                </View>
+              </View>
             </View>
             <View
               collapsable={false}
@@ -168,7 +216,7 @@ exports[`WalletConnectSessions does not render when not ready 1`] = `
                 onLayout={[Function]}
                 style={
                   {
-                    "color": "#0376c9",
+                    "color": "#4459ff",
                     "fontSize": 17,
                     "fontWeight": "600",
                   }
@@ -178,10 +226,9 @@ exports[`WalletConnectSessions does not render when not ready 1`] = `
                   accessibilityRole="text"
                   style={
                     {
-                      "color": "#141618",
-                      "fontFamily": "EuclidCircularB-Bold",
+                      "color": "#121314",
+                      "fontFamily": "Geist Bold",
                       "fontSize": 18,
-                      "fontWeight": "700",
                       "letterSpacing": 0,
                       "lineHeight": 24,
                     }
@@ -214,7 +261,13 @@ exports[`WalletConnectSessions does not render when not ready 1`] = `
             "top": -1,
           }
         }
+        onGestureCancel={[Function]}
         pointerEvents="box-none"
+        sheetAllowedDetents="large"
+        sheetCornerRadius={-1}
+        sheetExpandsWhenScrolledToEdge={true}
+        sheetGrabberVisible={false}
+        sheetLargestUndimmedDetent="all"
         style={
           {
             "bottom": 0,
@@ -222,6 +275,7 @@ exports[`WalletConnectSessions does not render when not ready 1`] = `
             "position": "absolute",
             "right": 0,
             "top": 0,
+            "zIndex": undefined,
           }
         }
       >
@@ -298,6 +352,9 @@ exports[`WalletConnectSessions does not render when not ready 1`] = `
           >
             <View
               collapsable={false}
+              enabled={false}
+              handlerTag={1}
+              handlerType="PanGestureHandler"
               onGestureHandlerEvent={[Function]}
               onGestureHandlerStateChange={[Function]}
               style={
@@ -493,39 +550,87 @@ exports[`WalletConnectSessions renders empty component with no active sessions 1
                 }
               }
             >
-              <TouchableOpacity
-                accessible={true}
-                activeOpacity={1}
-                disabled={false}
-                onPress={[Function]}
-                onPressIn={[Function]}
-                onPressOut={[Function]}
+              <View
                 style={
-                  {
-                    "alignItems": "center",
-                    "borderRadius": 8,
-                    "height": 32,
-                    "justifyContent": "center",
-                    "marginHorizontal": 16,
-                    "opacity": 1,
-                    "width": 32,
-                  }
-                }
-                testID="back-arrow-button"
-              >
-                <SvgMock
-                  color="#141618"
-                  height={24}
-                  name="ArrowLeft"
-                  style={
+                  [
                     {
-                      "height": 24,
-                      "width": 24,
+                      "transform": [
+                        {
+                          "scale": 1,
+                        },
+                      ],
+                    },
+                    {
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                    },
+                  ]
+                }
+              >
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": false,
+                      "expanded": undefined,
+                      "selected": undefined,
                     }
                   }
-                  width={24}
-                />
-              </TouchableOpacity>
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onBlur={[Function]}
+                  onClick={[Function]}
+                  onFocus={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    [
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "transparent",
+                        "borderRadius": 2,
+                        "height": 40,
+                        "justifyContent": "center",
+                        "opacity": 1,
+                        "width": 40,
+                      },
+                      {
+                        "marginHorizontal": 16,
+                      },
+                    ]
+                  }
+                  testID="back-arrow-button"
+                >
+                  <SvgMock
+                    fill="currentColor"
+                    name="ArrowLeft"
+                    style={
+                      [
+                        {
+                          "color": "#121314",
+                          "height": 24,
+                          "width": 24,
+                        },
+                        undefined,
+                      ]
+                    }
+                  />
+                </View>
+              </View>
             </View>
             <View
               collapsable={false}
@@ -545,7 +650,7 @@ exports[`WalletConnectSessions renders empty component with no active sessions 1
                 onLayout={[Function]}
                 style={
                   {
-                    "color": "#0376c9",
+                    "color": "#4459ff",
                     "fontSize": 17,
                     "fontWeight": "600",
                   }
@@ -555,10 +660,9 @@ exports[`WalletConnectSessions renders empty component with no active sessions 1
                   accessibilityRole="text"
                   style={
                     {
-                      "color": "#141618",
-                      "fontFamily": "EuclidCircularB-Bold",
+                      "color": "#121314",
+                      "fontFamily": "Geist Bold",
                       "fontSize": 18,
-                      "fontWeight": "700",
                       "letterSpacing": 0,
                       "lineHeight": 24,
                     }
@@ -591,7 +695,13 @@ exports[`WalletConnectSessions renders empty component with no active sessions 1
             "top": -1,
           }
         }
+        onGestureCancel={[Function]}
         pointerEvents="box-none"
+        sheetAllowedDetents="large"
+        sheetCornerRadius={-1}
+        sheetExpandsWhenScrolledToEdge={true}
+        sheetGrabberVisible={false}
+        sheetLargestUndimmedDetent="all"
         style={
           {
             "bottom": 0,
@@ -599,6 +709,7 @@ exports[`WalletConnectSessions renders empty component with no active sessions 1
             "position": "absolute",
             "right": 0,
             "top": 0,
+            "zIndex": undefined,
           }
         }
       >
@@ -675,6 +786,9 @@ exports[`WalletConnectSessions renders empty component with no active sessions 1
           >
             <View
               collapsable={false}
+              enabled={false}
+              handlerTag={2}
+              handlerType="PanGestureHandler"
               onGestureHandlerEvent={[Function]}
               onGestureHandlerStateChange={[Function]}
               style={
@@ -778,8 +892,8 @@ exports[`WalletConnectSessions renders empty component with no active sessions 1
                             <Text
                               style={
                                 {
-                                  "color": "#141618",
-                                  "fontFamily": "EuclidCircularB-Regular",
+                                  "color": "#121314",
+                                  "fontFamily": "CentraNo1-Book",
                                   "fontSize": 16,
                                   "fontWeight": "400",
                                 }
@@ -919,39 +1033,87 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                 }
               }
             >
-              <TouchableOpacity
-                accessible={true}
-                activeOpacity={1}
-                disabled={false}
-                onPress={[Function]}
-                onPressIn={[Function]}
-                onPressOut={[Function]}
+              <View
                 style={
-                  {
-                    "alignItems": "center",
-                    "borderRadius": 8,
-                    "height": 32,
-                    "justifyContent": "center",
-                    "marginHorizontal": 16,
-                    "opacity": 1,
-                    "width": 32,
-                  }
-                }
-                testID="back-arrow-button"
-              >
-                <SvgMock
-                  color="#141618"
-                  height={24}
-                  name="ArrowLeft"
-                  style={
+                  [
                     {
-                      "height": 24,
-                      "width": 24,
+                      "transform": [
+                        {
+                          "scale": 1,
+                        },
+                      ],
+                    },
+                    {
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                    },
+                  ]
+                }
+              >
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": false,
+                      "expanded": undefined,
+                      "selected": undefined,
                     }
                   }
-                  width={24}
-                />
-              </TouchableOpacity>
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onBlur={[Function]}
+                  onClick={[Function]}
+                  onFocus={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    [
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "transparent",
+                        "borderRadius": 2,
+                        "height": 40,
+                        "justifyContent": "center",
+                        "opacity": 1,
+                        "width": 40,
+                      },
+                      {
+                        "marginHorizontal": 16,
+                      },
+                    ]
+                  }
+                  testID="back-arrow-button"
+                >
+                  <SvgMock
+                    fill="currentColor"
+                    name="ArrowLeft"
+                    style={
+                      [
+                        {
+                          "color": "#121314",
+                          "height": 24,
+                          "width": 24,
+                        },
+                        undefined,
+                      ]
+                    }
+                  />
+                </View>
+              </View>
             </View>
             <View
               collapsable={false}
@@ -971,7 +1133,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                 onLayout={[Function]}
                 style={
                   {
-                    "color": "#0376c9",
+                    "color": "#4459ff",
                     "fontSize": 17,
                     "fontWeight": "600",
                   }
@@ -981,10 +1143,9 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                   accessibilityRole="text"
                   style={
                     {
-                      "color": "#141618",
-                      "fontFamily": "EuclidCircularB-Bold",
+                      "color": "#121314",
+                      "fontFamily": "Geist Bold",
                       "fontSize": 18,
-                      "fontWeight": "700",
                       "letterSpacing": 0,
                       "lineHeight": 24,
                     }
@@ -1017,7 +1178,13 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
             "top": -1,
           }
         }
+        onGestureCancel={[Function]}
         pointerEvents="box-none"
+        sheetAllowedDetents="large"
+        sheetCornerRadius={-1}
+        sheetExpandsWhenScrolledToEdge={true}
+        sheetGrabberVisible={false}
+        sheetLargestUndimmedDetent="all"
         style={
           {
             "bottom": 0,
@@ -1025,6 +1192,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
             "position": "absolute",
             "right": 0,
             "top": 0,
+            "zIndex": undefined,
           }
         }
       >
@@ -1101,6 +1269,9 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
           >
             <View
               collapsable={false}
+              enabled={false}
+              handlerTag={3}
+              handlerType="PanGestureHandler"
               onGestureHandlerEvent={[Function]}
               onGestureHandlerStateChange={[Function]}
               style={
@@ -1196,7 +1367,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                             onLongPress={[Function]}
                             style={
                               {
-                                "borderBottomColor": "#BBC0C566",
+                                "borderBottomColor": "#b7bbc866",
                                 "borderBottomWidth": 1,
                                 "flexDirection": "row",
                                 "paddingHorizontal": 20,
@@ -1208,7 +1379,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <View
                                 placeholderStyle={
                                   {
-                                    "backgroundColor": "#f2f4f6",
+                                    "backgroundColor": "#f3f5f9",
                                   }
                                 }
                                 useNativeDriver={true}
@@ -1252,7 +1423,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                                           "backgroundColor": "#eee",
                                         },
                                         {
-                                          "backgroundColor": "#f2f4f6",
+                                          "backgroundColor": "#f3f5f9",
                                         },
                                       ]
                                     }
@@ -1271,8 +1442,8 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <Text
                                 style={
                                   {
-                                    "color": "#141618",
-                                    "fontFamily": "EuclidCircularB-Bold",
+                                    "color": "#121314",
+                                    "fontFamily": "CentraNo1-Bold",
                                     "fontSize": 16,
                                     "fontWeight": "600",
                                     "marginBottom": 10,
@@ -1284,8 +1455,8 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <Text
                                 style={
                                   {
-                                    "color": "#6a737d",
-                                    "fontFamily": "EuclidCircularB-Regular",
+                                    "color": "#686e7d",
+                                    "fontFamily": "CentraNo1-Book",
                                     "fontSize": 12,
                                     "fontWeight": "400",
                                     "marginBottom": 10,
@@ -1297,8 +1468,8 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <Text
                                 style={
                                   {
-                                    "color": "#6a737d",
-                                    "fontFamily": "EuclidCircularB-Regular",
+                                    "color": "#686e7d",
+                                    "fontFamily": "CentraNo1-Book",
                                     "fontSize": 12,
                                     "fontWeight": "400",
                                     "marginBottom": 10,
@@ -1313,7 +1484,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                             onLongPress={[Function]}
                             style={
                               {
-                                "borderBottomColor": "#BBC0C566",
+                                "borderBottomColor": "#b7bbc866",
                                 "borderBottomWidth": 1,
                                 "flexDirection": "row",
                                 "paddingHorizontal": 20,
@@ -1325,7 +1496,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <View
                                 placeholderStyle={
                                   {
-                                    "backgroundColor": "#f2f4f6",
+                                    "backgroundColor": "#f3f5f9",
                                   }
                                 }
                                 useNativeDriver={true}
@@ -1369,7 +1540,7 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                                           "backgroundColor": "#eee",
                                         },
                                         {
-                                          "backgroundColor": "#f2f4f6",
+                                          "backgroundColor": "#f3f5f9",
                                         },
                                       ]
                                     }
@@ -1388,8 +1559,8 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <Text
                                 style={
                                   {
-                                    "color": "#141618",
-                                    "fontFamily": "EuclidCircularB-Bold",
+                                    "color": "#121314",
+                                    "fontFamily": "CentraNo1-Bold",
                                     "fontSize": 16,
                                     "fontWeight": "600",
                                     "marginBottom": 10,
@@ -1401,8 +1572,8 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <Text
                                 style={
                                   {
-                                    "color": "#6a737d",
-                                    "fontFamily": "EuclidCircularB-Regular",
+                                    "color": "#686e7d",
+                                    "fontFamily": "CentraNo1-Book",
                                     "fontSize": 12,
                                     "fontWeight": "400",
                                     "marginBottom": 10,
@@ -1414,8 +1585,8 @@ exports[`WalletConnectSessions should render active sessions 1`] = `
                               <Text
                                 style={
                                   {
-                                    "color": "#6a737d",
-                                    "fontFamily": "EuclidCircularB-Regular",
+                                    "color": "#686e7d",
+                                    "fontFamily": "CentraNo1-Book",
                                     "fontSize": 12,
                                     "fontWeight": "400",
                                     "marginBottom": 10,

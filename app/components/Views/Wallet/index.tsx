@@ -1,20 +1,27 @@
-import React, { useEffect, useRef, useCallback, useContext } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useContext,
+  useMemo,
+} from 'react';
 import {
   ActivityIndicator,
-  StyleSheet,
+  StyleSheet as RNStyleSheet,
   View,
-  TextStyle,
   Linking,
+  TextStyle,
 } from 'react-native';
 import type { Theme } from '@metamask/design-tokens';
-import { connect, useSelector } from 'react-redux';
-import ScrollableTabView from 'react-native-scrollable-tab-view';
-import DefaultTabBar from 'react-native-scrollable-tab-view/DefaultTabBar';
+import { connect, useSelector, useDispatch } from 'react-redux';
+import ScrollableTabView, {
+  ChangeTabProperties,
+} from 'react-native-scrollable-tab-view';
 import { baseStyles } from '../../../styles/common';
 import Tokens from '../../UI/Tokens';
 import { getWalletNavbarOptions } from '../../UI/Navbar';
 import { strings } from '../../../../locales/i18n';
-import { renderFromWei, weiToFiat, hexToBN } from '../../../util/number';
+import TabBar from '../../../component-library/components-temp/TabBar';
 import {
   isPastPrivacyPolicyDate,
   shouldShowNewPrivacyToastSelector,
@@ -22,17 +29,17 @@ import {
   storePrivacyPolicyClickedOrClosed as storePrivacyPolicyClickedOrClosedAction,
 } from '../../../reducers/legalNotices';
 import { CONSENSYS_PRIVACY_POLICY } from '../../../constants/urls';
+import StorageWrapper from '../../../store/storage-wrapper';
+import { SOLANA_FEATURE_MODAL_SHOWN } from '../../../constants/storage';
+
 import {
   ToastContext,
   ToastVariants,
 } from '../../../component-library/components/Toast';
-import { AvatarAccountType } from '../../../component-library/components/Avatars/Avatar';
 import NotificationsService from '../../../util/notifications/services/NotificationService';
 import Engine from '../../../core/Engine';
 import CollectibleContracts from '../../UI/CollectibleContracts';
 import { MetaMetricsEvents } from '../../../core/Analytics';
-import { getTicker } from '../../../util/transactions';
-import OnboardingWizard from '../../UI/OnboardingWizard';
 import ErrorBoundary from '../ErrorBoundary';
 import { useTheme } from '../../../util/theme';
 import Routes from '../../../constants/navigation/Routes';
@@ -40,15 +47,17 @@ import {
   getDecimalChainId,
   getIsNetworkOnboarded,
   isPortfolioViewEnabled,
+  isTestNet,
 } from '../../../util/networks';
 import {
   selectChainId,
+  selectEvmNetworkConfigurationsByChainId,
   selectIsAllNetworks,
   selectIsPopularNetwork,
   selectNetworkClientId,
   selectNetworkConfigurations,
   selectProviderConfig,
-  selectTicker,
+  selectNativeCurrencyByChainId,
 } from '../../../selectors/networkController';
 import {
   selectNetworkName,
@@ -57,27 +66,24 @@ import {
 import {
   selectAllDetectedTokensFlat,
   selectDetectedTokens,
-  selectTokens,
-  selectTransformedTokens,
 } from '../../../selectors/tokensController';
 import {
   NavigationProp,
   ParamListBase,
   useNavigation,
 } from '@react-navigation/native';
-import {
-  selectConversionRate,
-  selectCurrentCurrency,
-} from '../../../selectors/currencyRateController';
 import BannerAlert from '../../../component-library/components/Banners/Banner/variants/BannerAlert/BannerAlert';
 import { BannerAlertSeverity } from '../../../component-library/components/Banners/Banner';
-import Text, {
+import CustomText, {
   TextColor,
 } from '../../../component-library/components/Texts/Text';
 import { useMetrics } from '../../../components/hooks/useMetrics';
 import { RootState } from '../../../reducers';
 import usePrevious from '../../hooks/usePrevious';
-import { selectSelectedInternalAccount } from '../../../selectors/accountsController';
+import {
+  selectSelectedInternalAccount,
+  selectSelectedInternalAccountFormattedAddress,
+} from '../../../selectors/accountsController';
 import { selectAccountBalanceByChainId } from '../../../selectors/accountTrackerController';
 import {
   hideNftFetchingLoadingIndicator as hideNftFetchingLoadingIndicatorAction,
@@ -89,28 +95,65 @@ import {
   getMetamaskNotificationsReadCount,
   selectIsMetamaskNotificationsEnabled,
 } from '../../../selectors/notifications';
-import { selectIsProfileSyncingEnabled } from '../../../selectors/identity';
+import { selectIsBackupAndSyncEnabled } from '../../../selectors/identity';
 import { ButtonVariants } from '../../../component-library/components/Buttons/Button';
 import { useAccountName } from '../../hooks/useAccountName';
 
 import { PortfolioBalance } from '../../UI/Tokens/TokenList/PortfolioBalance';
 import useCheckNftAutoDetectionModal from '../../hooks/useCheckNftAutoDetectionModal';
 import useCheckMultiRpcModal from '../../hooks/useCheckMultiRpcModal';
-import { selectContractBalances } from '../../../selectors/tokenBalancesController';
+import { useAccountsWithNetworkActivitySync } from '../../hooks/useAccountsWithNetworkActivitySync';
 import {
   selectTokenNetworkFilter,
   selectUseTokenDetection,
 } from '../../../selectors/preferencesController';
 import { TokenI } from '../../UI/Tokens/types';
 import { Hex } from '@metamask/utils';
-import { Token } from '@metamask/assets-controllers';
+import { Nft, Token } from '@metamask/assets-controllers';
+import { Carousel } from '../../UI/Carousel';
+import { selectIsEvmNetworkSelected } from '../../../selectors/multichainNetworkController';
+import { useNftDetectionChainIds } from '../../hooks/useNftDetectionChainIds';
+import Logger from '../../../util/Logger';
+import { cloneDeep } from 'lodash';
+import { prepareNftDetectionEvents } from '../../../util/assets';
+import DeFiPositionsList from '../../UI/DeFiPositions/DeFiPositionsList';
+import { selectAssetsDefiPositionsEnabled } from '../../../selectors/featureFlagController/assetsDefiPositions';
+import { toFormattedAddress } from '../../../util/address';
+import { selectHDKeyrings } from '../../../selectors/keyringController';
+import { UserProfileProperty } from '../../../util/metrics/UserSettingsAnalyticsMetaData/UserProfileAnalyticsMetaData.types';
+import { endTrace, trace, TraceName } from '../../../util/trace';
+import AssetDetailsActions from '../AssetDetails/AssetDetailsActions';
+import {
+  useSwapBridgeNavigation,
+  SwapBridgeNavigationLocation,
+} from '../../UI/Bridge/hooks/useSwapBridgeNavigation';
+import { QRTabSwitcherScreens } from '../QRTabSwitcher';
+import { createBuyNavigationDetails } from '../../UI/Ramp/Aggregator/routes/utils';
+import { newAssetTransaction } from '../../../actions/transaction';
+import { getEther } from '../../../util/transactions';
+import { swapsUtils } from '@metamask/swaps-controller';
+import { swapsLivenessSelector } from '../../../reducers/swaps';
+import { isSwapsAllowed } from '../../UI/Swaps/utils';
+import { isBridgeAllowed } from '../../UI/Bridge/utils';
+import AppConstants from '../../../core/AppConstants';
+import useRampNetwork from '../../UI/Ramp/Aggregator/hooks/useRampNetwork';
+import { selectIsUnifiedSwapsEnabled } from '../../../core/redux/slices/bridge';
 ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
-import { selectMultichainIsEvm } from '../../../selectors/multichain';
-import NonEvmTokens from '../../UI/NonEvmTokens';
+import { useSendNonEvmAsset } from '../../hooks/useSendNonEvmAsset';
 ///: END:ONLY_INCLUDE_IF
+import { selectPerpsEnabledFlag } from '../../UI/Perps';
+import PerpsTabView from '../../UI/Perps/Views/PerpsTabView';
+import { selectIsConnectionRemoved } from '../../../reducers/user';
+import {
+  IconColor,
+  IconName,
+} from '../../../component-library/components/Icons/Icon';
+import { setIsConnectionRemoved } from '../../../actions/user';
+import { selectSeedlessOnboardingLoginFlow } from '../../../selectors/seedlessOnboardingController';
+import { useSendNavigation } from '../confirmations/hooks/useSendNavigation';
 
-const createStyles = ({ colors, typography }: Theme) =>
-  StyleSheet.create({
+const createStyles = ({ colors }: Theme) =>
+  RNStyleSheet.create({
     base: {
       paddingHorizontal: 16,
     },
@@ -119,21 +162,12 @@ const createStyles = ({ colors, typography }: Theme) =>
       backgroundColor: colors.background.default,
     },
     walletAccount: { marginTop: 28 },
-    tabUnderlineStyle: {
-      height: 2,
-      backgroundColor: colors.primary.default,
-    },
-    tabStyle: {
-      paddingBottom: 8,
-      paddingVertical: 8,
-    },
     tabBar: {
-      borderColor: colors.background.default,
       marginBottom: 8,
     },
-    textStyle: {
-      ...(typography.sBodyMD as TextStyle),
-      fontWeight: '500',
+    tabContainer: {
+      paddingHorizontal: 16,
+      flex: 1,
     },
     loader: {
       backgroundColor: colors.background.default,
@@ -142,9 +176,15 @@ const createStyles = ({ colors, typography }: Theme) =>
       alignItems: 'center',
     },
     banner: {
-      widht: '80%',
       marginTop: 20,
       paddingHorizontal: 16,
+    },
+    carouselContainer: {
+      marginBottom: 12,
+    },
+    tabStyle: {
+      paddingBottom: 8,
+      paddingVertical: 8,
     },
   });
 
@@ -157,6 +197,87 @@ interface WalletProps {
   showNftFetchingLoadingIndicator: () => void;
   hideNftFetchingLoadingIndicator: () => void;
 }
+
+const WalletTokensTabView = React.memo(
+  (props: {
+    navigation: WalletProps['navigation'];
+    onChangeTab: (value: ChangeTabProperties) => void;
+    defiEnabled: boolean;
+    collectiblesEnabled: boolean;
+  }) => {
+    const isPerpsEnabled = useSelector(selectPerpsEnabledFlag);
+    const { navigation, onChangeTab, defiEnabled, collectiblesEnabled } = props;
+
+    const theme = useTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
+
+    const renderTabBar = useCallback(
+      (tabBarProps: Record<string, unknown>) => (
+        <TabBar
+          style={styles.tabBar}
+          {...tabBarProps}
+          tabStyle={styles.tabStyle}
+          textStyle={{
+            ...(theme.typography.sBodySMBold as TextStyle),
+          }}
+        />
+      ),
+      [styles, theme],
+    );
+
+    const tokensTabProps = useMemo(
+      () => ({
+        key: 'tokens-tab',
+        tabLabel: strings('wallet.tokens'),
+        navigation,
+      }),
+      [navigation],
+    );
+
+    const perpsTabProps = useMemo(
+      () => ({
+        key: 'perps-tab',
+        tabLabel: strings('wallet.perps'),
+        navigation,
+      }),
+      [navigation],
+    );
+
+    const defiPositionsTabProps = useMemo(
+      () => ({
+        key: 'defi-tab',
+        tabLabel: strings('wallet.defi'),
+        navigation,
+      }),
+      [navigation],
+    );
+
+    const collectibleContractsTabProps = useMemo(
+      () => ({
+        key: 'nfts-tab',
+        tabLabel: strings('wallet.collectibles'),
+        navigation,
+      }),
+      [navigation],
+    );
+
+    return (
+      <View style={styles.tabContainer}>
+        <ScrollableTabView
+          renderTabBar={renderTabBar}
+          onChangeTab={onChangeTab}
+        >
+          <Tokens {...tokensTabProps} />
+          {isPerpsEnabled && <PerpsTabView {...perpsTabProps} />}
+          {defiEnabled && <DeFiPositionsList {...defiPositionsTabProps} />}
+          {collectiblesEnabled && (
+            <CollectibleContracts {...collectibleContractsTabProps} />
+          )}
+        </ScrollableTabView>
+      </View>
+    );
+  },
+);
 
 /**
  * Main view for the wallet
@@ -173,11 +294,16 @@ const Wallet = ({
   const walletRef = useRef(null);
   const theme = useTheme();
   const { toastRef } = useContext(ToastContext);
-  const { trackEvent, createEventBuilder } = useMetrics();
-  const styles = createStyles(theme);
+  const { trackEvent, createEventBuilder, addTraitsToUser } = useMetrics();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { colors } = theme;
+  const dispatch = useDispatch();
+  const { navigateToSendPage } = useSendNavigation();
 
   const networkConfigurations = useSelector(selectNetworkConfigurations);
+  const evmNetworkConfigurations = useSelector(
+    selectEvmNetworkConfigurationsByChainId,
+  );
 
   /**
    * Object containing the balance of the current selected account
@@ -185,41 +311,126 @@ const Wallet = ({
   const accountBalanceByChainId = useSelector(selectAccountBalanceByChainId);
 
   /**
-   * ETH to current currency conversion rate
-   */
-  const conversionRate = useSelector(selectConversionRate);
-  const contractBalances = useSelector(selectContractBalances);
-  /**
-   * Currency code of the currently-active currency
-   */
-  const currentCurrency = useSelector(selectCurrentCurrency);
-  /**
    * A string that represents the selected address
    */
   const selectedInternalAccount = useSelector(selectSelectedInternalAccount);
-  /**
-   * An array that represents the user tokens
-   */
-  const tokens = useSelector(selectTokens);
-  /**
-   * An array that represents the user tokens by chainId and address
-   */
-  const tokensByChainIdAndAddress = useSelector(selectTransformedTokens);
-  /**
-   * Current provider ticker
-   */
-  const ticker = useSelector(selectTicker);
-  /**
-   * Current onboarding wizard step
-   */
-  // TODO: Replace "any" with type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wizardStep = useSelector((state: any) => state.wizard.step);
+
   /**
    * Provider configuration for the current selected network
    */
   const providerConfig = useSelector(selectProviderConfig);
-  const prevChainId = usePrevious(providerConfig.chainId);
+  const chainId = useSelector(selectChainId);
+
+  const prevChainId = usePrevious(chainId);
+
+  const nativeCurrency = useSelector((state: RootState) =>
+    selectNativeCurrencyByChainId(state, chainId),
+  );
+
+  const [isNetworkRampSupported] = useRampNetwork();
+  const swapsIsLive = useSelector(swapsLivenessSelector);
+  const isUnifiedSwapsEnabled = useSelector(selectIsUnifiedSwapsEnabled);
+
+  // Setup for AssetDetailsActions
+  const { goToBridge, goToSwaps } = useSwapBridgeNavigation({
+    location: SwapBridgeNavigationLocation.TabBar,
+    sourcePage: 'MainView',
+    sourceToken: {
+      address: swapsUtils.NATIVE_SWAPS_TOKEN_ADDRESS,
+      chainId: chainId as Hex,
+      decimals: 18,
+      symbol: nativeCurrency || 'ETH',
+      name: nativeCurrency || 'Ethereum',
+      image: '',
+    },
+  });
+
+  // Hook for handling non-EVM asset sending
+  ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+  const { sendNonEvmAsset } = useSendNonEvmAsset({
+    asset: {
+      chainId: chainId as string,
+      address: undefined,
+    },
+  });
+  ///: END:ONLY_INCLUDE_IF
+
+  const displayBuyButton = isNetworkRampSupported;
+  const displaySwapsButton =
+    AppConstants.SWAPS.ACTIVE && isSwapsAllowed(chainId);
+  const displayBridgeButton =
+    !isUnifiedSwapsEnabled &&
+    AppConstants.BRIDGE.ACTIVE &&
+    isBridgeAllowed(chainId);
+
+  const onReceive = useCallback(() => {
+    navigate(Routes.QR_TAB_SWITCHER, {
+      initialScreen: QRTabSwitcherScreens.Receive,
+    });
+  }, [navigate]);
+
+  const onSend = useCallback(async () => {
+    try {
+      ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+      // Try non-EVM first, if handled, return early
+      const wasHandledAsNonEvm = await sendNonEvmAsset();
+      if (wasHandledAsNonEvm) {
+        return;
+      }
+      ///: END:ONLY_INCLUDE_IF
+
+      // Ensure consistent transaction initialization before navigation
+      if (nativeCurrency) {
+        // Initialize transaction with native currency
+        dispatch(newAssetTransaction(getEther(nativeCurrency)));
+      } else {
+        // Initialize with a default ETH transaction as fallback
+        // This ensures consistent state even when nativeCurrency is not available
+        console.warn(
+          'Native currency not available, using ETH as fallback for transaction initialization',
+        );
+        dispatch(newAssetTransaction(getEther('ETH')));
+      }
+
+      // Navigate to send flow after successful transaction initialization
+      navigateToSendPage();
+    } catch (error) {
+      // Handle any errors that occur during the send flow initiation
+      console.error('Error initiating send flow:', error);
+
+      // Still attempt to navigate to maintain user flow, but without transaction initialization
+      // The SendFlow view should handle the lack of initialized transaction gracefully
+      navigateToSendPage();
+    }
+  }, [
+    nativeCurrency,
+    navigateToSendPage,
+    dispatch,
+    ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+    sendNonEvmAsset,
+    ///: END:ONLY_INCLUDE_IF
+  ]);
+
+  const onBuy = useCallback(() => {
+    navigate(
+      ...createBuyNavigationDetails({
+        chainId: getDecimalChainId(chainId),
+      }),
+    );
+    trackEvent(
+      createEventBuilder(MetaMetricsEvents.BUY_BUTTON_CLICKED)
+        .addProperties({
+          text: 'Buy',
+          location: 'WalletOverview',
+          chain_id_destination: getDecimalChainId(chainId),
+        })
+        .build(),
+    );
+  }, [navigate, chainId, trackEvent, createEventBuilder]);
+
+  const selectedAddress = useSelector(
+    selectSelectedInternalAccountFormattedAddress,
+  );
 
   const isDataCollectionForMarketingEnabled = useSelector(
     (state: RootState) => state.security.dataCollectionForMarketing,
@@ -231,23 +442,22 @@ const Wallet = ({
     (state: RootState) => state.settings.basicFunctionalityEnabled,
   );
 
+  const assetsDefiPositionsEnabled = useSelector(
+    selectAssetsDefiPositionsEnabled,
+  );
+
+  const isEvmSelected = useSelector(selectIsEvmNetworkSelected);
+
   const { isEnabled: getParticipationInMetaMetrics } = useMetrics();
 
   const isParticipatingInMetaMetrics = getParticipationInMetaMetrics();
 
   const currentToast = toastRef?.current;
 
+  const hdKeyrings = useSelector(selectHDKeyrings);
+
   const accountName = useAccountName();
-
-  const accountAvatarType = useSelector((state: RootState) =>
-    state.settings.useBlockieIcon
-      ? AvatarAccountType.Blockies
-      : AvatarAccountType.JazzIcon,
-  );
-
-  ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
-  const isEvm = useSelector(selectMultichainIsEvm);
-  ///: END:ONLY_INCLUDE_IF
+  useAccountsWithNetworkActivitySync();
 
   useEffect(() => {
     if (
@@ -264,6 +474,52 @@ const Wallet = ({
     isParticipatingInMetaMetrics,
     navigate,
   ]);
+
+  const checkAndNavigateToSolanaFeature = useCallback(async () => {
+    const hasSeenModal = await StorageWrapper.getItem(
+      SOLANA_FEATURE_MODAL_SHOWN,
+    );
+
+    if (hasSeenModal !== 'true') {
+      navigate(Routes.SOLANA_NEW_FEATURE_CONTENT);
+    }
+  }, [navigate]);
+
+  ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+  useEffect(() => {
+    checkAndNavigateToSolanaFeature();
+  }, [checkAndNavigateToSolanaFeature]);
+  ///: END:ONLY_INCLUDE_IF
+
+  useEffect(() => {
+    addTraitsToUser({
+      [UserProfileProperty.NUMBER_OF_HD_ENTROPIES]: hdKeyrings.length,
+    });
+  }, [addTraitsToUser, hdKeyrings.length]);
+
+  const isConnectionRemoved = useSelector(selectIsConnectionRemoved);
+  const isSocialLogin = useSelector(selectSeedlessOnboardingLoginFlow);
+
+  useEffect(() => {
+    if (isConnectionRemoved && isSocialLogin) {
+      navigation.navigate(Routes.MODAL.ROOT_MODAL_FLOW, {
+        screen: Routes.SHEET.SUCCESS_ERROR_SHEET,
+        params: {
+          title: strings('connection_removed_modal.title'),
+          description: strings('connection_removed_modal.content'),
+          primaryButtonLabel: strings('connection_removed_modal.tryAgain'),
+          type: 'error',
+          icon: IconName.Danger,
+          iconColor: IconColor.Warning,
+          isInteractable: false,
+          closeOnPrimaryButtonPress: true,
+          onPrimaryButtonPress: () => {
+            dispatch(setIsConnectionRemoved(false));
+          },
+        },
+      });
+    }
+  }, [navigation, isConnectionRemoved, dispatch, isSocialLogin]);
 
   useEffect(() => {
     if (!shouldShowNewPrivacyToast) return;
@@ -313,17 +569,17 @@ const Wallet = ({
     selectIsMetamaskNotificationsEnabled,
   );
 
-  const isProfileSyncingEnabled = useSelector(selectIsProfileSyncingEnabled);
+  const isBackupAndSyncEnabled = useSelector(selectIsBackupAndSyncEnabled);
 
   const unreadNotificationCount = useSelector(
     getMetamaskNotificationsUnreadCount,
   );
 
   const readNotificationCount = useSelector(getMetamaskNotificationsReadCount);
-  const chainId = useSelector(selectChainId);
-  const name = useSelector(selectNetworkName);
+  const selectedNetworkName = useSelector(selectNetworkName);
 
-  const networkName = networkConfigurations?.[chainId]?.name ?? name;
+  const networkName =
+    networkConfigurations?.[chainId]?.name ?? selectedNetworkName;
 
   const networkImageSource = useSelector(selectNetworkImageSource);
   const tokenNetworkFilter = useSelector(selectTokenNetworkFilter);
@@ -340,8 +596,9 @@ const Wallet = ({
     isPortfolioViewEnabled() && isAllNetworks && isPopularNetworks
       ? allDetectedTokens
       : detectedTokens;
-  const allNetworks = useSelector(selectNetworkConfigurations);
   const selectedNetworkClientId = useSelector(selectNetworkClientId);
+
+  const chainIdsToDetectNftsFor = useNftDetectionChainIds();
 
   /**
    * Shows Nft auto detect modal if the user is on mainnet, never saw the modal and have nft detection off
@@ -363,14 +620,15 @@ const Wallet = ({
     trackEvent(
       createEventBuilder(MetaMetricsEvents.NETWORK_SELECTOR_PRESSED)
         .addProperties({
-          chain_id: getDecimalChainId(providerConfig.chainId),
+          chain_id: getDecimalChainId(chainId),
         })
         .build(),
     );
-  }, [navigate, providerConfig.chainId, trackEvent, createEventBuilder]);
+  }, [navigate, chainId, trackEvent, createEventBuilder]);
 
   /**
    * Handle network filter called when app is mounted and tokenNetworkFilter is empty
+   * TODO: [SOLANA] Check if this logic supports non evm networks before shipping Solana
    */
   const handleNetworkFilter = useCallback(() => {
     // TODO: Come back possibly just add the chain id of the eth
@@ -401,25 +659,24 @@ const Wallet = ({
    * Check to see if we need to show What's New modal
    */
   useEffect(() => {
+    // TODO: [SOLANA] Revisit this before shipping, we need to check if this logic supports non evm networks
     const networkOnboarded = getIsNetworkOnboarded(
-      providerConfig.chainId,
+      chainId,
       networkOnboardingState,
     );
 
-    if (
-      wizardStep > 0 ||
-      (!networkOnboarded && prevChainId !== providerConfig.chainId)
-    ) {
-      // Do not check since it will conflict with the onboarding wizard and/or network onboarding
+    if (!networkOnboarded && prevChainId !== chainId) {
+      // Do not check since it will conflict with the onboarding and/or network onboarding
       return;
     }
   }, [
-    wizardStep,
     navigation,
-    providerConfig.chainId,
+    chainId,
+    // TODO: Is this providerConfig.rpcUrl needed in this useEffect dependencies?
     providerConfig.rpcUrl,
     networkOnboardingState,
     prevChainId,
+    // TODO: Is this accountBalanceByChainId?.balance needed in this useEffect dependencies?
     accountBalanceByChainId?.balance,
   ]);
 
@@ -428,17 +685,20 @@ const Wallet = ({
       requestAnimationFrame(async () => {
         const { AccountTrackerController } = Engine.context;
 
-        Object.values(networkConfigurations).forEach(
-          ({ defaultRpcEndpointIndex, rpcEndpoints }) => {
-            AccountTrackerController.refresh(
+        const networkClientIDs = Object.values(evmNetworkConfigurations)
+          .map(
+            ({ defaultRpcEndpointIndex, rpcEndpoints }) =>
               rpcEndpoints[defaultRpcEndpointIndex].networkClientId,
-            );
-          },
-        );
+          )
+          .filter((c) => Boolean(c));
+
+        AccountTrackerController.refresh(networkClientIDs);
       });
     },
     /* eslint-disable-next-line */
-    [navigation, providerConfig.chainId],
+    // TODO: The need of usage of this chainId as a dependency is not clear, we shouldn't need to refresh the native balances when the chainId changes. Since the pooling is always working in the back. Check with assets team.
+    // TODO: [SOLANA] Check if this logic supports non evm networks before shipping Solana
+    [navigation, chainId, evmNetworkConfigurations],
   );
 
   useEffect(() => {
@@ -448,33 +708,50 @@ const Wallet = ({
         walletRef,
         selectedInternalAccount,
         accountName,
-        accountAvatarType,
         networkName,
         networkImageSource,
         onTitlePress,
         navigation,
         colors,
         isNotificationEnabled,
-        isProfileSyncingEnabled,
+        isBackupAndSyncEnabled,
         unreadNotificationCount,
         readNotificationCount,
       ),
     );
-    /* eslint-disable-next-line */
   }, [
     selectedInternalAccount,
     accountName,
-    accountAvatarType,
-    navigation,
-    colors,
     networkName,
     networkImageSource,
     onTitlePress,
+    navigation,
+    colors,
     isNotificationEnabled,
-    isProfileSyncingEnabled,
+    isBackupAndSyncEnabled,
     unreadNotificationCount,
     readNotificationCount,
   ]);
+
+  const getTokenAddedAnalyticsParams = useCallback(
+    ({ address, symbol }: { address: string; symbol: string }) => {
+      try {
+        return {
+          token_address: address,
+          token_symbol: symbol,
+          chain_id: getDecimalChainId(chainId),
+          source: 'Add token dropdown',
+        };
+      } catch (error) {
+        Logger.error(
+          error as Error,
+          'SearchTokenAutocomplete.getTokenAddedAnalyticsParams',
+        );
+        return undefined;
+      }
+    },
+    [chainId],
+  );
 
   useEffect(() => {
     const importAllDetectedTokens = async () => {
@@ -483,12 +760,16 @@ const Wallet = ({
         return;
       }
       const { TokensController } = Engine.context;
-      if (currentDetectedTokens.length > 0) {
+      if (
+        Array.isArray(currentDetectedTokens) &&
+        currentDetectedTokens.length > 0
+      ) {
         if (isPortfolioViewEnabled()) {
           // Group tokens by their `chainId` using a plain object
           const tokensByChainId: Record<Hex, Token[]> = {};
 
           for (const token of currentDetectedTokens) {
+            // TODO: [SOLANA] Check if this logic supports non evm networks before shipping Solana
             const tokenChainId: Hex =
               (token as TokenI & { chainId: Hex }).chainId ?? chainId;
 
@@ -502,7 +783,7 @@ const Wallet = ({
           // Process grouped tokens in parallel
           const importPromises = Object.entries(tokensByChainId).map(
             async ([networkId, allTokens]) => {
-              const chainConfig = allNetworks[networkId as Hex];
+              const chainConfig = evmNetworkConfigurations[networkId as Hex];
               const { defaultRpcEndpointIndex } = chainConfig;
               const { networkClientId: networkInstanceId } =
                 chainConfig.rpcEndpoints[defaultRpcEndpointIndex];
@@ -519,17 +800,26 @@ const Wallet = ({
           );
         }
 
-        currentDetectedTokens.forEach(({ address, symbol }) =>
-          trackEvent(
-            createEventBuilder(MetaMetricsEvents.TOKEN_ADDED)
-              .addProperties({
-                token_address: address,
-                token_symbol: symbol,
-                chain_id: getDecimalChainId(chainId),
-                source: 'detected',
-              })
-              .build(),
-          ),
+        currentDetectedTokens.forEach(
+          ({ address, symbol }: { address: string; symbol: string }) => {
+            const analyticsParams = getTokenAddedAnalyticsParams({
+              address,
+              symbol,
+            });
+
+            if (analyticsParams) {
+              trackEvent(
+                createEventBuilder(MetaMetricsEvents.TOKEN_ADDED)
+                  .addProperties({
+                    token_address: address,
+                    token_symbol: symbol,
+                    chain_id: getDecimalChainId(chainId),
+                    source: 'detected',
+                  })
+                  .build(),
+              );
+            }
+          },
         );
       }
     };
@@ -537,54 +827,85 @@ const Wallet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isTokenDetectionEnabled,
-    allNetworks,
+    evmNetworkConfigurations,
     chainId,
     currentDetectedTokens,
     selectedNetworkClientId,
   ]);
 
-  const renderTabBar = useCallback(
-    (props) => (
-      <View style={styles.base}>
-        <DefaultTabBar
-          underlineStyle={styles.tabUnderlineStyle}
-          activeTextColor={colors.primary.default}
-          inactiveTextColor={colors.text.default}
-          backgroundColor={colors.background.default}
-          tabStyle={styles.tabStyle}
-          textStyle={styles.textStyle}
-          tabPadding={16}
-          style={styles.tabBar}
-          {...props}
-        />
-      </View>
-    ),
-    [styles, colors],
-  );
+  const getNftDetectionAnalyticsParams = useCallback((nft: Nft) => {
+    try {
+      return {
+        chain_id: getDecimalChainId(nft.chainId),
+        source: 'detected' as const,
+      };
+    } catch (error) {
+      Logger.error(error as Error, 'Wallet.getNftDetectionAnalyticsParams');
+      return undefined;
+    }
+  }, []);
 
   const onChangeTab = useCallback(
-    async (obj) => {
+    async (obj: ChangeTabProperties) => {
       if (obj.ref.props.tabLabel === strings('wallet.tokens')) {
         trackEvent(createEventBuilder(MetaMetricsEvents.WALLET_TOKENS).build());
+      } else if (obj.ref.props.tabLabel === strings('wallet.defi')) {
+        trackEvent(
+          createEventBuilder(MetaMetricsEvents.DEFI_TAB_SELECTED).build(),
+        );
       } else {
+        // Return early if no address selected
+        if (!selectedAddress) return;
+
+        const formattedSelectedAddress = toFormattedAddress(selectedAddress);
+
         trackEvent(
           createEventBuilder(MetaMetricsEvents.WALLET_COLLECTIBLES).build(),
         );
         // Call detect nfts
-        const { NftDetectionController } = Engine.context;
+        const { NftDetectionController, NftController } = Engine.context;
+        const previousNfts = cloneDeep(
+          NftController.state.allNfts[formattedSelectedAddress],
+        );
+
         try {
+          trace({ name: TraceName.DetectNfts });
           showNftFetchingLoadingIndicator();
-          await NftDetectionController.detectNfts();
+          await NftDetectionController.detectNfts(chainIdsToDetectNftsFor);
+          endTrace({ name: TraceName.DetectNfts });
         } finally {
           hideNftFetchingLoadingIndicator();
         }
+
+        const newNfts = cloneDeep(
+          NftController.state.allNfts[formattedSelectedAddress],
+        );
+
+        const eventParams = prepareNftDetectionEvents(
+          previousNfts,
+          newNfts,
+          getNftDetectionAnalyticsParams,
+        );
+        eventParams.forEach((params) => {
+          trackEvent(
+            createEventBuilder(MetaMetricsEvents.COLLECTIBLE_ADDED)
+              .addProperties({
+                chain_id: params.chain_id,
+                source: params.source,
+              })
+              .build(),
+          );
+        });
       }
     },
     [
       trackEvent,
-      hideNftFetchingLoadingIndicator,
-      showNftFetchingLoadingIndicator,
       createEventBuilder,
+      selectedAddress,
+      showNftFetchingLoadingIndicator,
+      chainIdsToDetectNftsFor,
+      hideNftFetchingLoadingIndicator,
+      getNftDetectionAnalyticsParams,
     ],
   );
 
@@ -594,107 +915,14 @@ const Wallet = ({
     });
   }, [navigation]);
 
-  function renderTokensContent(assets: Token[]) {
-    ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
-    if (!isEvm) {
-      return (
-        <ScrollableTabView
-          renderTabBar={renderTabBar}
-          onChangeTab={onChangeTab}
-        >
-          <NonEvmTokens
-            tabLabel={strings('wallet.tokens')}
-            key={'tokens-tab'}
-          />
-        </ScrollableTabView>
-      );
-    }
-    ///: END:ONLY_INCLUDE_IF
+  const defiEnabled =
+    isEvmSelected &&
+    !isTestNet(chainId) &&
+    basicFunctionalityEnabled &&
+    assetsDefiPositionsEnabled;
 
-    return (
-      <ScrollableTabView
-        renderTabBar={renderTabBar}
-        // eslint-disable-next-line react/jsx-no-bind
-        onChangeTab={onChangeTab}
-      >
-        <Tokens
-          tabLabel={strings('wallet.tokens')}
-          key={'tokens-tab'}
-          navigation={navigation}
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error - TODO: Consolidate into the correct type.
-          tokens={assets}
-        />
-        <CollectibleContracts
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error - TODO: Consolidate into the correct type.
-          tabLabel={strings('wallet.collectibles')}
-          key={'nfts-tab'}
-          navigation={navigation}
-        />
-      </ScrollableTabView>
-    );
-  }
-
-  const renderContent = useCallback(() => {
-    // TODO: Replace "any" with type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let balance: any = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let stakedBalance: any = 0;
-
-    const assets = isPortfolioViewEnabled()
-      ? [...(tokensByChainIdAndAddress || [])]
-      : [...(tokens || [])];
-
-    if (accountBalanceByChainId) {
-      balance = renderFromWei(accountBalanceByChainId.balance);
-      const nativeAsset = {
-        // TODO: Add name property to Token interface in controllers.
-        name: getTicker(ticker) === 'ETH' ? 'Ethereum' : ticker,
-        symbol: getTicker(ticker),
-        isETH: true,
-        balance,
-        balanceFiat: weiToFiat(
-          // TODO: Replace "any" with type
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          hexToBN(accountBalanceByChainId.balance) as any,
-          conversionRate,
-          currentCurrency,
-        ),
-        logo: '../images/eth-logo-new.png',
-        // TODO: Replace "any" with type
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
-      assets.push(nativeAsset);
-
-      // TODO: Need to handle staked asset in multi chain
-      if (
-        accountBalanceByChainId.stakedBalance &&
-        !hexToBN(accountBalanceByChainId.stakedBalance).isZero()
-      ) {
-        stakedBalance = renderFromWei(accountBalanceByChainId.stakedBalance);
-        const stakedAsset = {
-          ...nativeAsset,
-          nativeAsset,
-          name: 'Staked Ethereum',
-          isStaked: true,
-          balance: stakedBalance,
-          balanceFiat: weiToFiat(
-            // TODO: Replace "any" with type
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            hexToBN(accountBalanceByChainId.stakedBalance) as any,
-            conversionRate,
-            currentCurrency,
-          ),
-          // TODO: Replace "any" with type
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any;
-        assets.push(stakedAsset);
-      }
-    }
-
-    return (
+  const renderContent = useCallback(
+    () => (
       <View
         style={styles.wrapper}
         testID={WalletViewSelectorsIDs.WALLET_CONTAINER}
@@ -705,39 +933,65 @@ const Wallet = ({
               severity={BannerAlertSeverity.Error}
               title={strings('wallet.banner.title')}
               description={
-                <Text color={TextColor.Info} onPress={turnOnBasicFunctionality}>
+                <CustomText
+                  color={TextColor.Info}
+                  onPress={turnOnBasicFunctionality}
+                >
                   {strings('wallet.banner.link')}
-                </Text>
+                </CustomText>
               }
             />
           </View>
         ) : null}
         <>
           <PortfolioBalance />
-          {renderTokensContent(assets)}
+          <AssetDetailsActions
+            displayBuyButton={displayBuyButton}
+            displaySwapsButton={displaySwapsButton}
+            displayBridgeButton={displayBridgeButton}
+            swapsIsLive={swapsIsLive}
+            goToBridge={goToBridge}
+            goToSwaps={goToSwaps}
+            onReceive={onReceive}
+            onSend={onSend}
+            onBuy={onBuy}
+            buyButtonActionID={WalletViewSelectorsIDs.WALLET_BUY_BUTTON}
+            swapButtonActionID={WalletViewSelectorsIDs.WALLET_SWAP_BUTTON}
+            bridgeButtonActionID={WalletViewSelectorsIDs.WALLET_BRIDGE_BUTTON}
+            sendButtonActionID={WalletViewSelectorsIDs.WALLET_SEND_BUTTON}
+            receiveButtonActionID={WalletViewSelectorsIDs.WALLET_RECEIVE_BUTTON}
+          />
+          <Carousel style={styles.carouselContainer} />
+          <WalletTokensTabView
+            navigation={navigation}
+            onChangeTab={onChangeTab}
+            defiEnabled={defiEnabled}
+            collectiblesEnabled={isEvmSelected}
+          />
         </>
       </View>
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    tokens,
-    accountBalanceByChainId,
-    styles.wrapper,
-    styles.banner,
-    basicFunctionalityEnabled,
-    turnOnBasicFunctionality,
-    renderTabBar,
-    onChangeTab,
-    navigation,
-    ticker,
-    conversionRate,
-    currentCurrency,
-    contractBalances,
-    ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
-    isEvm,
-    tokensByChainIdAndAddress,
-    ///: END:ONLY_INCLUDE_IF
-  ]);
+    ),
+    [
+      styles.banner,
+      styles.carouselContainer,
+      styles.wrapper,
+      basicFunctionalityEnabled,
+      defiEnabled,
+      isEvmSelected,
+      turnOnBasicFunctionality,
+      onChangeTab,
+      navigation,
+      goToBridge,
+      goToSwaps,
+      displayBuyButton,
+      displaySwapsButton,
+      displayBridgeButton,
+      swapsIsLive,
+      onReceive,
+      onSend,
+      onBuy,
+    ],
+  );
   const renderLoader = useCallback(
     () => (
       <View style={styles.loader}>
@@ -747,26 +1001,10 @@ const Wallet = ({
     [styles],
   );
 
-  /**
-   * Return current step of onboarding wizard if not step 5 nor 0
-   */
-  const renderOnboardingWizard = useCallback(
-    () =>
-      [1, 2, 3, 4, 5, 6, 7].includes(wizardStep) && (
-        <OnboardingWizard
-          navigation={navigation}
-          coachmarkRef={walletRef.current}
-        />
-      ),
-    [navigation, wizardStep],
-  );
-
   return (
     <ErrorBoundary navigation={navigation} view="Wallet">
       <View style={baseStyles.flexGrow}>
         {selectedInternalAccount ? renderContent() : renderLoader()}
-
-        {renderOnboardingWizard()}
       </View>
     </ErrorBoundary>
   );

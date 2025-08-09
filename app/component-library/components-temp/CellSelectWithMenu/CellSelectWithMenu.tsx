@@ -29,6 +29,7 @@ const CellSelectWithMenu = ({
   style,
   avatarProps,
   title,
+  titleProps,
   secondaryText,
   tertiaryText,
   tagLabel,
@@ -59,19 +60,43 @@ const CellSelectWithMenu = ({
         ) : null}
 
         <View style={styles.cellBaseInfo}>
-          <Text
-            numberOfLines={1}
-            variant={DEFAULT_CELLBASE_AVATAR_TITLE_TEXTVARIANT}
-            testID={CellComponentSelectorsIDs.BASE_TITLE}
-          >
-            {title}
-          </Text>
-          {!!secondaryText && (
-            <TouchableWithoutFeedback>
-              <TouchableOpacity
-                style={styles.containerRow}
-                onPress={props.onTextClick}
-              >
+          {title === undefined || typeof title === 'string' ? (
+            <Text
+              numberOfLines={1}
+              variant={DEFAULT_CELLBASE_AVATAR_TITLE_TEXTVARIANT}
+              testID={CellComponentSelectorsIDs.BASE_TITLE}
+              {...titleProps}
+            >
+              {title}
+            </Text>
+          ) : (
+            title
+          )}
+          {!!secondaryText &&
+            (props.onTextClick ? (
+              <TouchableWithoutFeedback>
+                <TouchableOpacity
+                  style={styles.containerRow}
+                  onPress={props.onTextClick}
+                >
+                  <Text
+                    numberOfLines={1}
+                    variant={DEFAULT_CELLBASE_AVATAR_SECONDARYTEXT_TEXTVARIANT}
+                    style={styles.secondaryText}
+                  >
+                    {secondaryText}
+                  </Text>
+                  {showSecondaryTextIcon && (
+                    <Icon
+                      name={IconName.ArrowDown}
+                      size={IconSize.Xss}
+                      style={styles.arrowStyle}
+                    />
+                  )}
+                </TouchableOpacity>
+              </TouchableWithoutFeedback>
+            ) : (
+              <View style={styles.containerRow}>
                 <Text
                   numberOfLines={1}
                   variant={DEFAULT_CELLBASE_AVATAR_SECONDARYTEXT_TEXTVARIANT}
@@ -86,9 +111,8 @@ const CellSelectWithMenu = ({
                     style={styles.arrowStyle}
                   />
                 )}
-              </TouchableOpacity>
-            </TouchableWithoutFeedback>
-          )}
+              </View>
+            ))}
           {!!tagLabel && (
             <Tag
               testID={CellComponentSelectorsIDs.TAG_LABEL}

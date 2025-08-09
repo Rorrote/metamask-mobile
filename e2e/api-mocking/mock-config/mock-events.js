@@ -2,10 +2,13 @@
  * Mock events for gas fee API responses.
  */
 
+import { E2E_METAMETRICS_TRACK_URL } from '../../../app/util/test/utils';
 import {
   suggestedGasApiResponses,
   suggestedGasFeesApiGanache,
 } from '../mock-responses/gas-api-responses.json';
+import defiPositionsWithData from '../mock-responses/defi-api-response-data.json';
+import { DEFAULT_FIXTURE_ACCOUNT } from '../../framework/fixtures/FixtureBuilder';
 
 export const mockEvents = {
   /**
@@ -34,28 +37,6 @@ export const mockEvents = {
       response: suggestedGasFeesApiGanache,
       responseCode: 200,
     },
-
-    securityAlertApiSupportedChains: {
-      urlEndpoint: 'https://security-alerts.api.cx.metamask.io/supportedChains',
-      response: [
-        '0xa4b1',
-        '0xa86a',
-        '0x2105',
-        '0x138d5',
-        '0x38',
-        '0xe708',
-        '0x1',
-        '0x1b6e6',
-        '0xcc',
-        '0xa',
-        '0x89',
-        '0x82750',
-        '0xaa36a7',
-        '0x144',
-      ],
-      responseCode: 200,
-    },
-
     remoteFeatureFlagsOldConfirmations: {
       urlEndpoint:
         'https://client-config.api.cx.metamask.io/v1/flags?client=mobile&distribution=main&environment=dev',
@@ -67,12 +48,21 @@ export const mockEvents = {
             androidMinimumAPIVersion: 21,
           },
         },
-        { confirmation_redesign: { signatures: false } },
+        {
+          confirmation_redesign: {
+            signatures: false,
+            staking_confirmations: false,
+            contract_deployment: false,
+            contract_interaction: false,
+            transfer: false,
+            approve: false,
+          },
+        },
       ],
       responseCode: 200,
     },
 
-    remoteFeatureFlagsReDesignedConfirmations: {
+    remoteFeatureFlagsRedesignedConfirmations: {
       urlEndpoint:
         'https://client-config.api.cx.metamask.io/v1/flags?client=mobile&distribution=main&environment=dev',
       response: [
@@ -83,7 +73,169 @@ export const mockEvents = {
             androidMinimumAPIVersion: 21,
           },
         },
-        { confirmation_redesign: { signatures: true } },
+        {
+          confirmation_redesign: {
+            signatures: true,
+            staking_confirmations: true,
+            contract_deployment: true,
+            contract_interaction: true,
+            transfer: true,
+            approve: true,
+          },
+        },
+        {
+          confirmations_eip_7702: {
+            contracts: {
+              '0xaa36a7': [
+                {
+                  signature:
+                    '0x016cf109489c415ba28e695eb3cb06ac46689c5c49e2aba101d7ec2f68c890282563b324f5c8df5e0536994451825aa235438b7346e8c18b4e64161d990781891c',
+                  address: '0xCd8D6C5554e209Fbb0deC797C6293cf7eAE13454',
+                },
+              ],
+              '0x539': [
+                {
+                  address: '0x8438Ad1C834623CfF278AB6829a248E37C2D7E3f',
+                  signature:
+                    '0x4c15775d0c6d5bd37a7aa7aafc62e85597ea705024581b8b5cb0edccc4e6a69e26c495b3ae725815a377c9789bff43bf19e4dd1eaa679e65133e49ceee3ea87f1b',
+                },
+              ],
+              '0x1': [
+                {
+                  address: '0xabcabcabcabcabcabcabcabcabcabcabcabcabca',
+                  signature:
+                    '0x5b394cc656b760fc15e855f9b8b9d0eec6337328361771c696d7f5754f0348e06298d34243e815ff8b5ce869e5f310c37dd100c1827e91b56bb208d1fafcf3a71c',
+                },
+              ],
+            },
+            supportedChains: ['0xaa36a7', '0x539', '0x1'],
+          },
+        },
+      ],
+      responseCode: 200,
+    },
+
+    remoteFeatureFlagsRedesignedConfirmationsFlask: {
+      urlEndpoint:
+        'https://client-config.api.cx.metamask.io/v1/flags?client=mobile&distribution=flask&environment=dev',
+      response: [
+        {
+          mobileMinimumVersions: {
+            appMinimumBuild: 1243,
+            appleMinimumOS: 6,
+            androidMinimumAPIVersion: 21,
+          },
+        },
+        {
+          confirmation_redesign: {
+            signatures: true,
+            staking_confirmations: true,
+            contract_deployment: true,
+            contract_interaction: true,
+            transfer: true,
+            approve: true,
+          },
+        },
+      ],
+      responseCode: 200,
+    },
+
+    // TODO: Remove when this feature is no longer behind a feature flag
+    remoteFeatureFlagsDefiPositionsEnabled: {
+      urlEndpoint:
+        'https://client-config.api.cx.metamask.io/v1/flags?client=mobile&distribution=main&environment=dev',
+      response: [
+        {
+          assetsDefiPositionsEnabled: true,
+        },
+      ],
+      responseCode: 200,
+    },
+
+    // TODO: Remove when this feature is no longer behind a feature flag
+    remoteFeatureFlagsNotificationsEnabledByDefault: {
+      urlEndpoint:
+        'https://client-config.api.cx.metamask.io/v1/flags?client=mobile&distribution=main&environment=dev',
+      response: [
+        {
+          assetsEnableNotificationsByDefault: true,
+        },
+      ],
+      responseCode: 200,
+    },
+
+    defiPositionsWithNoData: {
+      urlEndpoint: `https://defiadapters.api.cx.metamask.io/positions/${DEFAULT_FIXTURE_ACCOUNT}`,
+      response: { data: [] },
+      responseCode: 200,
+    },
+
+    defiPositionsError: {
+      urlEndpoint: `https://defiadapters.api.cx.metamask.io/positions/${DEFAULT_FIXTURE_ACCOUNT}`,
+      response: { error: 'Internal server error' },
+      responseCode: 500,
+    },
+
+    defiPositionsWithData: {
+      urlEndpoint: `https://defiadapters.api.cx.metamask.io/positions/${DEFAULT_FIXTURE_ACCOUNT}`,
+      response: { data: defiPositionsWithData },
+      responseCode: 200,
+    },
+
+    remoteFeatureMultichainAccountsAccountDetails: (enabled = true) => ({
+      urlEndpoint:
+        'https://client-config.api.cx.metamask.io/v1/flags?client=mobile&distribution=main&environment=dev',
+      response: [
+        {
+          enableMultichainAccounts: {
+            enabled,
+            featureVersion: '1',
+            minimumVersion: '7.46.0',
+          },
+        },
+      ],
+      responseCode: 200,
+    }),
+
+    remoteFeatureEip7702: {
+      urlEndpoint:
+        'https://client-config.api.cx.metamask.io/v1/flags?client=mobile&distribution=main&environment=dev',
+      response: [
+        {
+          mobileMinimumVersions: {
+            appMinimumBuild: 1243,
+            appleMinimumOS: 6,
+            androidMinimumAPIVersion: 21,
+          },
+        },
+        {
+          confirmations_eip_7702: {
+            contracts: {
+              '0xaa36a7': [
+                {
+                  signature:
+                    '0x016cf109489c415ba28e695eb3cb06ac46689c5c49e2aba101d7ec2f68c890282563b324f5c8df5e0536994451825aa235438b7346e8c18b4e64161d990781891c',
+                  address: '0xCd8D6C5554e209Fbb0deC797C6293cf7eAE13454',
+                },
+              ],
+              '0x539': [
+                {
+                  address: '0x8438Ad1C834623CfF278AB6829a248E37C2D7E3f',
+                  signature:
+                    '0x4c15775d0c6d5bd37a7aa7aafc62e85597ea705024581b8b5cb0edccc4e6a69e26c495b3ae725815a377c9789bff43bf19e4dd1eaa679e65133e49ceee3ea87f1b',
+                },
+              ],
+              '0x1': [
+                {
+                  address: '0xabcabcabcabcabcabcabcabcabcabcabcabcabca',
+                  signature:
+                    '0x5b394cc656b760fc15e855f9b8b9d0eec6337328361771c696d7f5754f0348e06298d34243e815ff8b5ce869e5f310c37dd100c1827e91b56bb208d1fafcf3a71c',
+                },
+              ],
+            },
+            supportedChains: ['0xaa36a7', '0x539', '0x1'],
+          },
+        },
       ],
       responseCode: 200,
     },
@@ -131,6 +283,12 @@ export const mockEvents = {
         ],
       },
       responseCode: 201,
+    },
+
+    segmentTrack: {
+      urlEndpoint: E2E_METAMETRICS_TRACK_URL,
+      responseCode: 200,
+      response: { success: true },
     },
   },
 };

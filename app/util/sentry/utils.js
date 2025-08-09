@@ -1,15 +1,15 @@
 /* eslint-disable import/no-namespace */
 import * as Sentry from '@sentry/react-native';
-import { Dedupe, ExtraErrorData } from '@sentry/integrations';
+import { dedupeIntegration, extraErrorDataIntegration } from '@sentry/browser';
 import extractEthJsErrorMessage from '../extractEthJsErrorMessage';
 import StorageWrapper from '../../store/storage-wrapper';
 import { regex } from '../regex';
 import { AGREED, METRICS_OPT_IN } from '../../constants/storage';
-import { isE2E } from '../test/utils';
+import { isE2E, isQa } from '../test/utils';
 import { store } from '../../store';
 import { Performance } from '../../core/Performance';
 import Device from '../device';
-import { TraceName } from '../trace';
+import { TraceName, hasMetricsConsent } from '../trace';
 import { getTraceTags } from './tags';
 /**
  * This symbol matches all object properties when used in a mask
@@ -193,9 +193,6 @@ export const sentryStateMask = {
       TransactionController: {
         [AllProperties]: false,
       },
-      AuthenticationController: {
-        [AllProperties]: false,
-      },
       NotificationServicesController: {
         isCheckingAccountsPresence: false,
         isFeatureAnnouncementsEnabled: false,
@@ -208,9 +205,17 @@ export const sentryStateMask = {
         metamaskNotificationsReadList: [],
         subscriptionAccountsSeen: [],
       },
+      AuthenticationController: {
+        isSignedIn: false,
+        srpSessionData: false,
+      },
       UserStorageController: {
-        isProfileSyncingEnabled: true,
-        isProfileSyncingUpdateLoading: false,
+        isBackupAndSyncEnabled: true,
+        isBackupAndSyncUpdateLoading: false,
+        isAccountSyncingEnabled: true,
+        hasAccountSyncingSyncedAtLeastOnce: false,
+        isAccountSyncingReadyToBeDispatched: false,
+        isAccountSyncingInProgress: false,
       },
     },
   },
@@ -276,7 +281,7 @@ function getProtocolFromURL(url) {
   return new URL(url).protocol;
 }
 
-function rewriteBreadcrumb(breadcrumb) {
+export function rewriteBreadcrumb(breadcrumb) {
   if (breadcrumb.data?.url) {
     breadcrumb.data.url = getProtocolFromURL(breadcrumb.data.url);
   }
@@ -407,7 +412,7 @@ export function maskObject(objectToMask, mask = {}) {
   }, {});
 }
 
-function rewriteReport(report) {
+export function rewriteReport(report) {
   try {
     // filter out SES from error stack trace
     removeSES(report);
@@ -473,8 +478,11 @@ function sanitizeUrlsFromErrorMessages(report) {
     const urlsInMessage = errorMessage.match(regex.sanitizeUrl);
 
     urlsInMessage?.forEach((url) => {
-      if (!ERROR_URL_ALLOWLIST.some((allowedUrl) => url.match(allowedUrl))) {
-        errorMessage.replace(url, '**');
+      const isAllowed = ERROR_URL_ALLOWLIST.some((allowedUrl) =>
+        url.match(allowedUrl),
+      );
+      if (!isAllowed) {
+        errorMessage = errorMessage.replace(url, '**');
       }
     });
     return errorMessage;
@@ -508,6 +516,7 @@ function sanitizeAddressesFromErrorMessages(report) {
  */
 export function deriveSentryEnvironment(
   isDev,
+  // TODO: Replace local with dev
   metamaskEnvironment = 'local',
   metamaskBuildType = 'main',
 ) {
@@ -516,14 +525,27 @@ export function deriveSentryEnvironment(
   }
 
   if (metamaskBuildType === 'main') {
-    return metamaskEnvironment;
+    switch (metamaskEnvironment) {
+      case 'beta':
+        return 'main-beta';
+      case 'rc':
+        return 'main-rc';
+      case 'exp':
+        return 'main-exp';
+      case 'e2e':
+        return 'main-e2e';
+      case 'test':
+        return 'main-test';
+      default:
+        return metamaskEnvironment;
+    }
   }
 
   return `${metamaskEnvironment}-${metamaskBuildType}`;
 }
 
 // Setup sentry remote error reporting
-export function setupSentry() {
+export async function setupSentry(forceEnabled = false) {
   const dsn = process.env.MM_SENTRY_DSN;
 
   // Disable Sentry for E2E tests or when DSN is not provided
@@ -531,13 +553,13 @@ export function setupSentry() {
     return;
   }
 
-  const isQa = METAMASK_ENVIRONMENT === 'qa';
   const isDev = __DEV__;
 
   const init = async () => {
-    const metricsOptIn = await StorageWrapper.getItem(METRICS_OPT_IN);
+    // Ensure consent cache is populated early
+    const hasConsent = await hasMetricsConsent();
 
-    const integrations = [new Dedupe(), new ExtraErrorData()];
+    const integrations = [dedupeIntegration(), extraErrorDataIntegration()];
     const environment = deriveSentryEnvironment(
       __DEV__,
       METAMASK_ENVIRONMENT,
@@ -550,15 +572,45 @@ export function setupSentry() {
       environment,
       integrations,
       // Set tracesSampleRate to 1.0, as that ensures that every transaction will be sent to Sentry for development builds.
-      tracesSampleRate: isDev || isQa ? 1.0 : 0.04,
+      tracesSampleRate: isDev || isQa ? 1.0 : 0.03,
       profilesSampleRate: 1.0,
       beforeSend: (report) => rewriteReport(report),
       beforeBreadcrumb: (breadcrumb) => rewriteBreadcrumb(breadcrumb),
       beforeSendTransaction: (event) => excludeEvents(event),
-      enabled: metricsOptIn === AGREED,
+      enabled: forceEnabled || hasConsent,
+      // Use tracePropagationTargets from v5 SDK as default
+      tracePropagationTargets: ['localhost', /^\/(?!\/)/],
     });
   };
-  init();
+  await init();
+}
+
+/**
+ * Capture an exception with forced Sentry reporting.
+ * This initializes Sentry with enabled: true and captures the exception.
+ * Should only be used for critical errors where user hasn't consented to metrics yet.
+ *
+ * @param {Error} error - The error to capture
+ * @param {Object} extra - Additional context to include with the error
+ */
+export async function captureExceptionForced(error, extra = {}) {
+  try {
+    // Initialize Sentry with forced enabled state
+    await setupSentry(true);
+
+    Sentry.captureException(error, {
+      extra,
+      tags: { forced_reporting: true },
+    });
+  } catch (sentryError) {
+    console.error(
+      'Failed to capture exception with forced Sentry:',
+      sentryError,
+    );
+  } finally {
+    // Reset Sentry to its default state
+    await setupSentry();
+  }
 }
 
 // eslint-disable-next-line no-empty-function

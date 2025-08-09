@@ -7,11 +7,13 @@ import { connect } from 'react-redux';
 import { fontStyles } from '../../../../styles/common';
 import { strings } from '../../../../../locales/i18n';
 import {
-  findBlockExplorerForRpc,
   getBlockExplorerName,
   isMainNet,
   isMultiLayerFeeNetwork,
   getBlockExplorerTxUrl,
+  findBlockExplorerForNonEvmChainId,
+  isLineaMainnetChainId,
+  isPerDappSelectedNetworkEnabled,
 } from '../../../../util/networks';
 import Logger from '../../../../util/Logger';
 import EthereumAddress from '../../EthereumAddress';
@@ -19,25 +21,28 @@ import TransactionSummary from '../../../Views/TransactionSummary';
 import { toDateFormat } from '../../../../util/date';
 import StyledButton from '../../StyledButton';
 import StatusText from '../../../Base/StatusText';
-import Text from '../../../Base/Text';
+import Text, {
+  TextColor,
+  TextVariant,
+} from '../../../../component-library/components/Texts/Text';
 import DetailsModal from '../../../Base/DetailsModal';
 import { RPC, NO_RPC_BLOCK_EXPLORER } from '../../../../constants/network';
 import { withNavigation } from '@react-navigation/compat';
 import { ThemeContext, mockTheme } from '../../../../util/theme';
-import Engine from '../../../../core/Engine';
 import decodeTransaction from '../../TransactionElement/utils';
 import {
   selectChainId,
   selectNetworkConfigurations,
+  selectEvmTicker,
   selectProviderConfig,
-  selectTicker,
+  selectTickerByChainId,
 } from '../../../../selectors/networkController';
 import {
-  selectConversionRate,
+  selectConversionRateByChainId,
   selectCurrentCurrency,
 } from '../../../../selectors/currencyRateController';
-import { selectTokensByAddress } from '../../../../selectors/tokensController';
-import { selectContractExchangeRates } from '../../../../selectors/tokenRatesController';
+import { selectTokensByChainIdAndAddress } from '../../../../selectors/tokensController';
+import { selectContractExchangeRatesByChainId } from '../../../../selectors/tokenRatesController';
 import { selectSelectedInternalAccountFormattedAddress } from '../../../../selectors/accountsController';
 import { regex } from '../../../../../app/util/regex';
 import { selectShouldUseSmartTransaction } from '../../../../selectors/smartTransactionsController';
@@ -48,6 +53,21 @@ import {
 } from '../../../../selectors/transactionController';
 import { swapsControllerTokens } from '../../../../reducers/swaps';
 import { getGlobalEthQuery } from '../../../../util/networks/global-network';
+import { isNonEvmChainId } from '../../../../core/Multichain/utils';
+import Avatar, {
+  AvatarSize,
+  AvatarVariant,
+} from '../../../../component-library/components/Avatars/Avatar';
+import { AvatarAccountType } from '../../../../component-library/components/Avatars/Avatar/variants/AvatarAccount';
+import { WalletViewSelectorsIDs } from '../../../../../e2e/selectors/wallet/WalletView.selectors';
+import {
+  LINEA_MAINNET_BLOCK_EXPLORER,
+  LINEA_SEPOLIA_BLOCK_EXPLORER,
+  MAINNET_BLOCK_EXPLORER,
+  SEPOLIA_BLOCK_EXPLORER,
+} from '../../../../constants/urls';
+import { CHAIN_IDS } from '@metamask/transaction-controller';
+import TagBase from '../../../../component-library/base-components/TagBase';
 
 const createStyles = (colors) =>
   StyleSheet.create({
@@ -81,6 +101,22 @@ const createStyles = (colors) =>
       flexDirection: 'row',
       paddingTop: 10,
     },
+    cellAccount: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'flex-start',
+    },
+    accountNameLabel: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    accountNameAvatar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    accountAvatar: {
+      marginRight: 8,
+    },
   });
 
 /**
@@ -93,13 +129,9 @@ class TransactionDetails extends PureComponent {
     */
     navigation: PropTypes.object,
     /**
-     * Chain Id
+     * Chain ID string
      */
     chainId: PropTypes.string,
-    /**
-     * Object representing the configuration of the current selected network
-     */
-    providerConfig: PropTypes.object,
     /**
      * Object corresponding to a transaction, containing transaction object, networkId and transaction hash string
      */
@@ -150,6 +182,39 @@ class TransactionDetails extends PureComponent {
   };
 
   /**
+   * Returns the appropriate block explorer URL for a given chain
+   * @param {string} chainId - The chain ID to get the block explorer for
+   * @param {string} txChainId - The transaction chain ID
+   * @param {Object} networkConfigurations - The network configurations object
+   * @returns {string} The block explorer URL
+   */
+  getBlockExplorerForChain = (chainId, txChainId, networkConfigurations) => {
+    // First check for network configuration block explorer
+    let blockExplorer =
+      networkConfigurations?.[txChainId]?.blockExplorerUrls[
+        networkConfigurations[txChainId]?.defaultBlockExplorerUrlIndex
+      ] || NO_RPC_BLOCK_EXPLORER;
+
+    // Check for default block explorers based on chain ID
+    if (isMainNet(txChainId)) {
+      blockExplorer = MAINNET_BLOCK_EXPLORER;
+    } else if (isLineaMainnetChainId(txChainId)) {
+      blockExplorer = LINEA_MAINNET_BLOCK_EXPLORER;
+    } else if (txChainId === CHAIN_IDS.LINEA_SEPOLIA) {
+      blockExplorer = LINEA_SEPOLIA_BLOCK_EXPLORER;
+    } else if (txChainId === CHAIN_IDS.SEPOLIA) {
+      blockExplorer = SEPOLIA_BLOCK_EXPLORER;
+    }
+
+    // Check for non-EVM chain block explorer
+    if (isNonEvmChainId(chainId)) {
+      blockExplorer = findBlockExplorerForNonEvmChainId(chainId);
+    }
+
+    return blockExplorer;
+  };
+
+  /**
    * Updates transactionDetails for multilayer fee networks (e.g. for Optimism).
    */
   updateTransactionDetails = async () => {
@@ -158,7 +223,6 @@ class TransactionDetails extends PureComponent {
       transactionDetails,
       selectedAddress,
       ticker,
-      chainId,
       conversionRate,
       currentCurrency,
       contractExchangeRates,
@@ -168,6 +232,10 @@ class TransactionDetails extends PureComponent {
       swapsTokens,
       transactions,
     } = this.props;
+
+    const chainId = isPerDappSelectedNetworkEnabled()
+      ? transactionObject.chainId
+      : this.props.chainId;
     const multiLayerFeeNetwork = isMultiLayerFeeNetwork(chainId);
     const transactionHash = transactionDetails?.hash;
     if (
@@ -199,6 +267,7 @@ class TransactionDetails extends PureComponent {
         primaryCurrency,
         swapsTransactions,
         swapsTokens,
+        txChainId: transactionObject.chainId,
       });
       this.setState({ updatedTransactionDetails: decodedTx[1] });
     } catch (e) {
@@ -209,15 +278,16 @@ class TransactionDetails extends PureComponent {
 
   componentDidMount = () => {
     const {
-      providerConfig: { rpcUrl, type },
+      transactionObject: { chainId: txChainId },
+      chainId,
       networkConfigurations,
     } = this.props;
-    let blockExplorer;
-    if (type === RPC) {
-      blockExplorer =
-        findBlockExplorerForRpc(rpcUrl, networkConfigurations) ||
-        NO_RPC_BLOCK_EXPLORER;
-    }
+
+    const blockExplorer = this.getBlockExplorerForChain(
+      chainId,
+      txChainId,
+      networkConfigurations,
+    );
     this.setState({ rpcBlockExplorer: blockExplorer });
     this.updateTransactionDetails();
   };
@@ -227,16 +297,11 @@ class TransactionDetails extends PureComponent {
       navigation,
       transactionObject: { networkID },
       transactionDetails: { hash },
-      providerConfig: { type },
       close,
     } = this.props;
     const { rpcBlockExplorer } = this.state;
     try {
-      const { url, title } = getBlockExplorerTxUrl(
-        type,
-        hash,
-        rpcBlockExplorer,
-      );
+      const { url, title } = getBlockExplorerTxUrl(RPC, hash, rpcBlockExplorer);
       navigation.push('Webview', {
         screen: 'SimpleWebview',
         params: { url, title },
@@ -307,10 +372,16 @@ class TransactionDetails extends PureComponent {
 
   render = () => {
     const {
-      chainId,
-      transactionObject: { status, time, txParams },
+      transactionObject,
+      transactionObject: { status, time, txParams, chainId: txChainId },
       shouldUseSmartTransaction,
     } = this.props;
+    const chainId = isPerDappSelectedNetworkEnabled()
+      ? txChainId
+      : this.props.chainId;
+    const hasNestedTransactions = Boolean(
+      transactionObject?.nestedTransactions?.length,
+    );
     const { updatedTransactionDetails } = this.state;
     const styles = this.getStyles();
 
@@ -321,18 +392,33 @@ class TransactionDetails extends PureComponent {
 
     return updatedTransactionDetails ? (
       <DetailsModal.Body>
+        {hasNestedTransactions && (
+          <DetailsModal.Section>
+            <DetailsModal.Column>
+              <TagBase includesBorder>
+                <Text
+                  color={TextColor.Alternative}
+                  variant={TextVariant.BodySMBold}
+                >
+                  {strings('transactions.batched_transactions')}
+                </Text>
+              </TagBase>
+            </DetailsModal.Column>
+          </DetailsModal.Section>
+        )}
         <DetailsModal.Section borderBottom>
           <DetailsModal.Column>
             <DetailsModal.SectionTitle>
               {strings('transactions.status')}
             </DetailsModal.SectionTitle>
             <StatusText status={status} />
-            {!!renderTxActions && (
-              <View style={styles.transactionActionsContainer}>
-                {this.renderSpeedUpButton()}
-                {this.renderCancelButton()}
-              </View>
-            )}
+            {!!renderTxActions &&
+              updatedTransactionDetails?.txChainId === chainId && (
+                <View style={styles.transactionActionsContainer}>
+                  {this.renderSpeedUpButton()}
+                  {this.renderCancelButton()}
+                </View>
+              )}
           </DetailsModal.Column>
           <DetailsModal.Column end>
             <DetailsModal.SectionTitle>
@@ -348,23 +434,57 @@ class TransactionDetails extends PureComponent {
             <DetailsModal.SectionTitle>
               {strings('transactions.from')}
             </DetailsModal.SectionTitle>
-            <Text small primary>
-              <EthereumAddress
-                type="short"
-                address={updatedTransactionDetails.renderFrom}
-              />
-            </Text>
+            <View style={styles.cellAccount}>
+              <View style={styles.accountNameLabel}>
+                <View style={styles.accountNameAvatar}>
+                  <Avatar
+                    variant={AvatarVariant.Account}
+                    type={AvatarAccountType.Jazzicon}
+                    accountAddress={updatedTransactionDetails.renderFrom}
+                    size={AvatarSize.Md}
+                    style={styles.accountAvatar}
+                  />
+                  <Text
+                    small
+                    primary
+                    testID={WalletViewSelectorsIDs.ACCOUNT_NAME_LABEL_TEXT}
+                  >
+                    <EthereumAddress
+                      type="short"
+                      address={updatedTransactionDetails.renderFrom}
+                    />
+                  </Text>
+                </View>
+              </View>
+            </View>
           </DetailsModal.Column>
           <DetailsModal.Column end>
             <DetailsModal.SectionTitle>
               {strings('transactions.to')}
             </DetailsModal.SectionTitle>
-            <Text small primary>
-              <EthereumAddress
-                type="short"
-                address={updatedTransactionDetails.renderTo}
-              />
-            </Text>
+            <View style={styles.cellAccount}>
+              <View style={styles.accountNameLabel}>
+                <View style={styles.accountNameAvatar}>
+                  <Avatar
+                    variant={AvatarVariant.Account}
+                    type={AvatarAccountType.Jazzicon}
+                    accountAddress={updatedTransactionDetails.renderFrom}
+                    size={AvatarSize.Md}
+                    style={styles.accountAvatar}
+                  />
+                  <Text
+                    small
+                    primary
+                    testID={WalletViewSelectorsIDs.ACCOUNT_NAME_LABEL_TEXT}
+                  >
+                    <EthereumAddress
+                      type="short"
+                      address={updatedTransactionDetails.renderTo}
+                    />
+                  </Text>
+                </View>
+              </View>
+            </View>
           </DetailsModal.Column>
         </DetailsModal.Section>
         <DetailsModal.Section>
@@ -400,20 +520,18 @@ class TransactionDetails extends PureComponent {
             chainId={chainId}
           />
         </View>
-
         {updatedTransactionDetails.hash &&
           status !== 'cancelled' &&
+          rpcBlockExplorer &&
           rpcBlockExplorer !== NO_RPC_BLOCK_EXPLORER && (
             <TouchableOpacity
               onPress={this.viewOnEtherscan}
               style={styles.touchableViewOnEtherscan}
             >
-              <Text reset style={styles.viewOnEtherscan}>
-                {(rpcBlockExplorer &&
-                  `${strings('transactions.view_on')} ${getBlockExplorerName(
-                    rpcBlockExplorer,
-                  )}`) ||
-                  strings('transactions.view_on_etherscan')}
+              <Text style={styles.viewOnEtherscan}>
+                {`${strings('transactions.view_on')} ${getBlockExplorerName(
+                  rpcBlockExplorer,
+                )}`}
               </Text>
             </TouchableOpacity>
           )}
@@ -422,21 +540,37 @@ class TransactionDetails extends PureComponent {
   };
 }
 
-const mapStateToProps = (state) => ({
-  providerConfig: selectProviderConfig(state),
+const mapStateToProps = (state, ownProps) => ({
   chainId: selectChainId(state),
+  providerConfig: isPerDappSelectedNetworkEnabled()
+    ? selectProviderConfig(state)
+    : undefined,
   networkConfigurations: selectNetworkConfigurations(state),
   selectedAddress: selectSelectedInternalAccountFormattedAddress(state),
   transactions: selectTransactions(state),
-  ticker: selectTicker(state),
-  tokens: selectTokensByAddress(state),
-  contractExchangeRates: selectContractExchangeRates(state),
-  conversionRate: selectConversionRate(state),
+  ticker: isPerDappSelectedNetworkEnabled()
+    ? selectTickerByChainId(state, ownProps.transactionObject.chainId)
+    : selectEvmTicker(state),
+  tokens: selectTokensByChainIdAndAddress(
+    state,
+    ownProps.transactionObject.chainId,
+  ),
+  contractExchangeRates: selectContractExchangeRatesByChainId(
+    state,
+    ownProps.transactionObject.chainId,
+  ),
+  conversionRate: selectConversionRateByChainId(
+    state,
+    ownProps.transactionObject.chainId,
+  ),
   currentCurrency: selectCurrentCurrency(state),
   primaryCurrency: selectPrimaryCurrency(state),
   swapsTransactions: selectSwapsTransactions(state),
   swapsTokens: swapsControllerTokens(state),
-  shouldUseSmartTransaction: selectShouldUseSmartTransaction(state),
+  shouldUseSmartTransaction: selectShouldUseSmartTransaction(
+    state,
+    ownProps.transactionObject.chainId,
+  ),
 });
 
 TransactionDetails.contextType = ThemeContext;

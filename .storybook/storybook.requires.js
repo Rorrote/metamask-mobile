@@ -11,31 +11,10 @@ import {
 global.STORIES = [
   {
     titlePrefix: "",
-    directory: "./app/component-library/components",
+    directory: "./app",
     files: "**/*.stories.?(ts|tsx|js|jsx)",
     importPathMatcher:
-      "^\\.[\\\\/](?:app\\/component-library\\/components(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)\\/|\\/|$)(?!\\.)(?=.)[^/]*?\\.stories\\.(?:ts|tsx|js|jsx)?)$",
-  },
-  {
-    titlePrefix: "",
-    directory: "./app/component-library/base-components",
-    files: "**/*.stories.?(ts|tsx|js|jsx)",
-    importPathMatcher:
-      "^\\.[\\\\/](?:app\\/component-library\\/base-components(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)\\/|\\/|$)(?!\\.)(?=.)[^/]*?\\.stories\\.(?:ts|tsx|js|jsx)?)$",
-  },
-  {
-    titlePrefix: "",
-    directory: "./app/component-library/components-temp/TagColored",
-    files: "**/*.stories.?(ts|tsx|js|jsx)",
-    importPathMatcher:
-      "^\\.[\\\\/](?:app\\/component-library\\/components-temp\\/TagColored(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)\\/|\\/|$)(?!\\.)(?=.)[^/]*?\\.stories\\.(?:ts|tsx|js|jsx)?)$",
-  },
-  {
-    titlePrefix: "",
-    directory: "./app/component-library/components-temp/KeyValueRow",
-    files: "**/*.stories.?(ts|tsx|js|jsx)",
-    importPathMatcher:
-      "^\\.[\\\\/](?:app\\/component-library\\/components-temp\\/KeyValueRow(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)\\/|\\/|$)(?!\\.)(?=.)[^/]*?\\.stories\\.(?:ts|tsx|js|jsx)?)$",
+      "^\\.[\\\\/](?:app(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)\\/|\\/|$)(?!\\.)(?=.)[^/]*?\\.stories\\.(?:ts|tsx|js|jsx)?)$",
   },
 ];
 
@@ -61,6 +40,22 @@ if (parameters) {
 
 const getStories = () => {
   return {
+    "./app/component-library/base-components/TagBase/TagBase.stories.tsx": require("../app/component-library/base-components/TagBase/TagBase.stories.tsx"),
+    "./app/component-library/components-temp/ActionListItem/ActionListItem.stories.tsx": require("../app/component-library/components-temp/ActionListItem/ActionListItem.stories.tsx"),
+    "./app/component-library/components-temp/Buttons/ButtonHero/ButtonHero.stories.tsx": require("../app/component-library/components-temp/Buttons/ButtonHero/ButtonHero.stories.tsx"),
+    "./app/component-library/components-temp/Buttons/ButtonToggle/ButtonToggle.stories.tsx": require("../app/component-library/components-temp/Buttons/ButtonToggle/ButtonToggle.stories.tsx"),
+    "./app/component-library/components-temp/CellSelectWithMenu/CellSelectWithMenu.stories.tsx": require("../app/component-library/components-temp/CellSelectWithMenu/CellSelectWithMenu.stories.tsx"),
+    "./app/component-library/components-temp/KeyValueRow/KeyValueRow.stories.tsx": require("../app/component-library/components-temp/KeyValueRow/KeyValueRow.stories.tsx"),
+    "./app/component-library/components-temp/ListItemMultiSelectButton/ListItemMultiSelectButton.stories.tsx": require("../app/component-library/components-temp/ListItemMultiSelectButton/ListItemMultiSelectButton.stories.tsx"),
+    "./app/component-library/components-temp/MainActionButton/MainActionButton.stories.tsx": require("../app/component-library/components-temp/MainActionButton/MainActionButton.stories.tsx"),
+    "./app/component-library/components-temp/MultichainAccounts/AccountCell/AccountCell.stories.tsx": require("../app/component-library/components-temp/MultichainAccounts/AccountCell/AccountCell.stories.tsx"),
+    "./app/component-library/components-temp/MultichainAccounts/MultichainAddressRow/MultichainAddressRow.stories.tsx": require("../app/component-library/components-temp/MultichainAccounts/MultichainAddressRow/MultichainAddressRow.stories.tsx"),
+    "./app/component-library/components-temp/MultichainAccounts/MultichainAddressRowsList/MultichainAddressRowsList.stories.tsx": require("../app/component-library/components-temp/MultichainAccounts/MultichainAddressRowsList/MultichainAddressRowsList.stories.tsx"),
+    "./app/component-library/components-temp/Price/AggregatedPercentage/AggregatedPercentage.stories.tsx": require("../app/component-library/components-temp/Price/AggregatedPercentage/AggregatedPercentage.stories.tsx"),
+    "./app/component-library/components-temp/Price/PercentageChange/PercentageChange.stories.tsx": require("../app/component-library/components-temp/Price/PercentageChange/PercentageChange.stories.tsx"),
+    "./app/component-library/components-temp/SegmentedControl/SegmentedControl.stories.tsx": require("../app/component-library/components-temp/SegmentedControl/SegmentedControl.stories.tsx"),
+    "./app/component-library/components-temp/TabBar/TabBar.stories.tsx": require("../app/component-library/components-temp/TabBar/TabBar.stories.tsx"),
+    "./app/component-library/components-temp/TagColored/TagColored.stories.tsx": require("../app/component-library/components-temp/TagColored/TagColored.stories.tsx"),
     "./app/component-library/components/Accordions/Accordion/Accordion.stories.tsx": require("../app/component-library/components/Accordions/Accordion/Accordion.stories.tsx"),
     "./app/component-library/components/Accordions/Accordion/foundation/AccordionHeader/AccordionHeader.stories.tsx": require("../app/component-library/components/Accordions/Accordion/foundation/AccordionHeader/AccordionHeader.stories.tsx"),
     "./app/component-library/components/Avatars/Avatar/Avatar.stories.tsx": require("../app/component-library/components/Avatars/Avatar/Avatar.stories.tsx"),
@@ -92,6 +87,7 @@ const getStories = () => {
     "./app/component-library/components/Cells/Cell/variants/CellMultiSelect/CellMultiSelect.stories.tsx": require("../app/component-library/components/Cells/Cell/variants/CellMultiSelect/CellMultiSelect.stories.tsx"),
     "./app/component-library/components/Cells/Cell/variants/CellSelect/CellSelect.stories.tsx": require("../app/component-library/components/Cells/Cell/variants/CellSelect/CellSelect.stories.tsx"),
     "./app/component-library/components/Checkbox/Checkbox.stories.tsx": require("../app/component-library/components/Checkbox/Checkbox.stories.tsx"),
+    "./app/component-library/components/design-system.stories.tsx": require("../app/component-library/components/design-system.stories.tsx"),
     "./app/component-library/components/Form/HelpText/HelpText.stories.tsx": require("../app/component-library/components/Form/HelpText/HelpText.stories.tsx"),
     "./app/component-library/components/Form/Label/Label.stories.tsx": require("../app/component-library/components/Form/Label/Label.stories.tsx"),
     "./app/component-library/components/Form/TextField/foundation/Input/Input.stories.tsx": require("../app/component-library/components/Form/TextField/foundation/Input/Input.stories.tsx"),
@@ -108,26 +104,24 @@ const getStories = () => {
     "./app/component-library/components/Navigation/TabBarItem/TabBarItem.stories.tsx": require("../app/component-library/components/Navigation/TabBarItem/TabBarItem.stories.tsx"),
     "./app/component-library/components/Overlay/Overlay.stories.tsx": require("../app/component-library/components/Overlay/Overlay.stories.tsx"),
     "./app/component-library/components/Pickers/PickerAccount/PickerAccount.stories.tsx": require("../app/component-library/components/Pickers/PickerAccount/PickerAccount.stories.tsx"),
+    "./app/component-library/components/Pickers/PickerBase/PickerBase.stories.tsx": require("../app/component-library/components/Pickers/PickerBase/PickerBase.stories.tsx"),
     "./app/component-library/components/Pickers/PickerNetwork/PickerNetwork.stories.tsx": require("../app/component-library/components/Pickers/PickerNetwork/PickerNetwork.stories.tsx"),
     "./app/component-library/components/RadioButton/RadioButton.stories.tsx": require("../app/component-library/components/RadioButton/RadioButton.stories.tsx"),
     "./app/component-library/components/Select/SelectButton/SelectButton.stories.tsx": require("../app/component-library/components/Select/SelectButton/SelectButton.stories.tsx"),
     "./app/component-library/components/Select/SelectOption/SelectOption.stories.tsx": require("../app/component-library/components/Select/SelectOption/SelectOption.stories.tsx"),
     "./app/component-library/components/Select/SelectValue/SelectValue.stories.tsx": require("../app/component-library/components/Select/SelectValue/SelectValue.stories.tsx"),
-    "./app/component-library/components/Sheet/SheetBottom/SheetBottom.stories.tsx": require("../app/component-library/components/Sheet/SheetBottom/SheetBottom.stories.tsx"),
     "./app/component-library/components/Sheet/SheetHeader/SheetHeader.stories.tsx": require("../app/component-library/components/Sheet/SheetHeader/SheetHeader.stories.tsx"),
+    "./app/component-library/components/Skeleton/Skeleton.stories.tsx": require("../app/component-library/components/Skeleton/Skeleton.stories.tsx"),
     "./app/component-library/components/Tags/Tag/Tag.stories.tsx": require("../app/component-library/components/Tags/Tag/Tag.stories.tsx"),
     "./app/component-library/components/Tags/TagUrl/TagUrl.stories.tsx": require("../app/component-library/components/Tags/TagUrl/TagUrl.stories.tsx"),
+    "./app/component-library/components/Texts/SensitiveText/SensitiveText.stories.tsx": require("../app/component-library/components/Texts/SensitiveText/SensitiveText.stories.tsx"),
     "./app/component-library/components/Texts/Text/Text.stories.tsx": require("../app/component-library/components/Texts/Text/Text.stories.tsx"),
     "./app/component-library/components/Texts/TextWithPrefixIcon/TextWithPrefixIcon.stories.tsx": require("../app/component-library/components/Texts/TextWithPrefixIcon/TextWithPrefixIcon.stories.tsx"),
     "./app/component-library/components/Toast/Toast.stories.tsx": require("../app/component-library/components/Toast/Toast.stories.tsx"),
-    "./app/component-library/base-components/TagBase/TagBase.stories.tsx": require("../app/component-library/base-components/TagBase/TagBase.stories.tsx"),
-    "./app/component-library/components-temp/TagColored/TagColored.stories.tsx": require("../app/component-library/components-temp/TagColored/TagColored.stories.tsx"),
-    "./app/component-library/components-temp/KeyValueRow/KeyValueRow.stories.tsx": require("../app/component-library/components-temp/KeyValueRow/KeyValueRow.stories.tsx"),
-    "./app/components/Views/confirmations/components/UI/InfoRow/InfoRow.stories.tsx": require("../app/components/Views/confirmations/components/UI/InfoRow/InfoRow.stories.tsx"),
-    "./app/components/Views/confirmations/components/UI/ExpandableSection/ExpandableSection.stories.tsx": require("../app/components/Views/confirmations/components/UI/ExpandableSection/ExpandableSection.stories.tsx"),
-    "./app/components/Views/confirmations/components/UI/Tooltip/Tooltip.stories.tsx": require("../app/components/Views/confirmations/components/UI/Tooltip/Tooltip.stories.tsx"),
-    "./app/components/Views/confirmations/components/UI/TextWithTooltip/TextWithTooltip.stories.tsx": require("../app/components/Views/confirmations/components/UI/TextWithTooltip/TextWithTooltip.stories.tsx"),
-    "./app/component-library/components/Texts/SensitiveText/SensitiveText.stories.tsx": require("../app/component-library/components/Texts/SensitiveText/SensitiveText.stories.tsx"),
+    "./app/components/Base/Keypad/Keypad.stories.tsx": require("../app/components/Base/Keypad/Keypad.stories.tsx"),
+    "./app/components/UI/Swaps/components/LoadingAnimation/ShapesBackgroundAnimation.stories.tsx": require("../app/components/UI/Swaps/components/LoadingAnimation/ShapesBackgroundAnimation.stories.tsx"),
+    "./app/components/Views/AssetDetails/AssetDetailsActions/AssetDetailsActions.stories.tsx": require("../app/components/Views/AssetDetails/AssetDetailsActions/AssetDetailsActions.stories.tsx"),
+    "./app/components/Views/QRAccountDisplay/QRAccountDisplay.stories.tsx": require("../app/components/Views/QRAccountDisplay/QRAccountDisplay.stories.tsx"),
   };
 };
 

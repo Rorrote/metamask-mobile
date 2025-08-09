@@ -34,7 +34,7 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
       style={
         [
           {
-            "backgroundColor": "#00000099",
+            "backgroundColor": "#3f434a66",
             "bottom": 0,
             "left": 0,
             "position": "absolute",
@@ -74,6 +74,9 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
     >
       <View
         collapsable={false}
+        enabled={false}
+        handlerTag={-1}
+        handlerType="PanGestureHandler"
         onGestureHandlerEvent={[Function]}
         onGestureHandlerStateChange={[Function]}
         onLayout={[Function]}
@@ -81,14 +84,14 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
           [
             {
               "backgroundColor": "#ffffff",
-              "borderColor": "#BBC0C566",
-              "borderTopLeftRadius": 8,
-              "borderTopRightRadius": 8,
+              "borderColor": "#b7bbc866",
+              "borderTopLeftRadius": 24,
+              "borderTopRightRadius": 24,
               "borderWidth": 1,
-              "maxHeight": 1334,
+              "maxHeight": 640,
               "overflow": "hidden",
               "paddingBottom": 0,
-              "shadowColor": "#0000001A",
+              "shadowColor": "#0000001a",
               "shadowOffset": {
                 "height": 2,
                 "width": 0,
@@ -99,7 +102,7 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
             {
               "transform": [
                 {
-                  "translateY": 1334,
+                  "translateY": 640,
                 },
               ],
             },
@@ -109,11 +112,14 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
         <View>
           <View
             style={
-              {
-                "backgroundColor": "#ffffff",
-                "flexDirection": "row",
-                "padding": 16,
-              }
+              [
+                {
+                  "backgroundColor": "#ffffff",
+                  "flexDirection": "row",
+                  "padding": 16,
+                },
+                false,
+              ]
             }
             testID="header"
           >
@@ -141,10 +147,9 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                 accessibilityRole="text"
                 style={
                   {
-                    "color": "#141618",
-                    "fontFamily": "EuclidCircularB-Bold",
+                    "color": "#121314",
+                    "fontFamily": "Geist Bold",
                     "fontSize": 16,
-                    "fontWeight": "700",
                     "letterSpacing": 0,
                     "lineHeight": 24,
                   }
@@ -182,7 +187,8 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                   }
                 >
                   <SvgMock
-                    color="#141618"
+                    color="#121314"
+                    fill="currentColor"
                     height={16}
                     name="Close"
                     style={
@@ -217,7 +223,7 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                 style={
                   {
                     "alignItems": "center",
-                    "backgroundColor": "#f2f4f6",
+                    "backgroundColor": "#3c4d9d0f",
                     "borderRadius": 32,
                     "height": 36,
                     "justifyContent": "center",
@@ -230,12 +236,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                   accessibilityRole="text"
                   style={
                     {
-                      "color": "#6a737d",
-                      "fontFamily": "EuclidCircularB-Medium",
-                      "fontSize": 14,
-                      "fontWeight": "500",
+                      "color": "#686e7d",
+                      "fontFamily": "Geist Medium",
+                      "fontSize": 16,
                       "letterSpacing": 0,
-                      "lineHeight": 22,
+                      "lineHeight": 24,
                     }
                   }
                 >
@@ -260,12 +265,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                   accessibilityRole="text"
                   style={
                     {
-                      "color": "#6a737d",
-                      "fontFamily": "EuclidCircularB-Medium",
-                      "fontSize": 14,
-                      "fontWeight": "500",
+                      "color": "#686e7d",
+                      "fontFamily": "Geist Medium",
+                      "fontSize": 16,
                       "letterSpacing": 0,
-                      "lineHeight": 22,
+                      "lineHeight": 24,
                     }
                   }
                 >
@@ -290,12 +294,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                   accessibilityRole="text"
                   style={
                     {
-                      "color": "#6a737d",
-                      "fontFamily": "EuclidCircularB-Medium",
-                      "fontSize": 14,
-                      "fontWeight": "500",
+                      "color": "#686e7d",
+                      "fontFamily": "Geist Medium",
+                      "fontSize": 16,
                       "letterSpacing": 0,
-                      "lineHeight": 22,
+                      "lineHeight": 24,
                     }
                   }
                 >
@@ -320,12 +323,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                   accessibilityRole="text"
                   style={
                     {
-                      "color": "#6a737d",
-                      "fontFamily": "EuclidCircularB-Medium",
-                      "fontSize": 14,
-                      "fontWeight": "500",
+                      "color": "#686e7d",
+                      "fontFamily": "Geist Medium",
+                      "fontSize": 16,
                       "letterSpacing": 0,
-                      "lineHeight": 22,
+                      "lineHeight": 24,
                     }
                   }
                 >
@@ -346,27 +348,25 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                 accessibilityRole="text"
                 style={
                   {
-                    "color": "#1c8234",
-                    "fontFamily": "EuclidCircularB-Bold",
+                    "color": "#457a39",
+                    "fontFamily": "Geist Bold",
                     "fontSize": 24,
-                    "fontWeight": "700",
                     "letterSpacing": 0,
                     "lineHeight": 32,
                   }
                 }
               >
-                3.25% APR
+                3.3% APR
               </Text>
               <Text
                 accessibilityRole="text"
                 style={
                   {
-                    "color": "#6a737d",
-                    "fontFamily": "EuclidCircularB-Medium",
-                    "fontSize": 14,
-                    "fontWeight": "500",
+                    "color": "#686e7d",
+                    "fontFamily": "Geist Medium",
+                    "fontSize": 16,
                     "letterSpacing": 0,
-                    "lineHeight": 22,
+                    "lineHeight": 24,
                   }
                 }
               >
@@ -438,7 +438,7 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                       }
                     >
                       <RNSVGPath
-                        d="M0,44.85025249125118L50,35.255971425324546L100,20L150,31.229371496223877L200,45.39613604488909L250,49.50466282315335L300,40.850895011093414L300,80L250,80L200,80L150,80L100,80L50,80L0,80Z"
+                        d="M0,80L50,80L100,80L150,80L200,80L250,80L300,80L300,80L250,80L200,80L150,80L100,80L50,80L0,80Z"
                         fill={
                           {
                             "brushRef": "dataGradient",
@@ -452,7 +452,7 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                         }
                       />
                       <RNSVGPath
-                        d="M0,44.85025249125118L50,35.255971425324546L100,20L150,31.229371496223877L200,45.39613604488909L250,49.50466282315335L300,40.850895011093414"
+                        d="M0,80L50,80L100,80L150,80L200,80L250,80L300,80"
                         fill={null}
                         opacity={1}
                         propList={
@@ -464,7 +464,7 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                         }
                         stroke={
                           {
-                            "payload": 4280058420,
+                            "payload": 4282743353,
                             "type": 0,
                           }
                         }
@@ -476,7 +476,7 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                           gradient={
                             [
                               0,
-                              857506356,
+                              860191289,
                               1,
                               872415231,
                             ]
@@ -508,12 +508,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               accessibilityRole="text"
               style={
                 {
-                  "color": "#141618",
-                  "fontFamily": "EuclidCircularB-Medium",
-                  "fontSize": 14,
-                  "fontWeight": "500",
+                  "color": "#121314",
+                  "fontFamily": "Geist Medium",
+                  "fontSize": 16,
                   "letterSpacing": 0,
-                  "lineHeight": 22,
+                  "lineHeight": 24,
                 }
               }
             >
@@ -523,12 +522,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                 accessibilityRole="text"
                 style={
                   {
-                    "color": "#6a737d",
-                    "fontFamily": "EuclidCircularB-Regular",
-                    "fontSize": 14,
-                    "fontWeight": "400",
+                    "color": "#686e7d",
+                    "fontFamily": "Geist Regular",
+                    "fontSize": 16,
                     "letterSpacing": 0,
-                    "lineHeight": 22,
+                    "lineHeight": 24,
                   }
                 }
               >
@@ -539,12 +537,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               accessibilityRole="text"
               style={
                 {
-                  "color": "#141618",
-                  "fontFamily": "EuclidCircularB-Medium",
-                  "fontSize": 14,
-                  "fontWeight": "500",
+                  "color": "#121314",
+                  "fontFamily": "Geist Medium",
+                  "fontSize": 16,
                   "letterSpacing": 0,
-                  "lineHeight": 22,
+                  "lineHeight": 24,
                 }
               }
             >
@@ -554,12 +551,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                 accessibilityRole="text"
                 style={
                   {
-                    "color": "#6a737d",
-                    "fontFamily": "EuclidCircularB-Regular",
-                    "fontSize": 14,
-                    "fontWeight": "400",
+                    "color": "#686e7d",
+                    "fontFamily": "Geist Regular",
+                    "fontSize": 16,
                     "letterSpacing": 0,
-                    "lineHeight": 22,
+                    "lineHeight": 24,
                   }
                 }
               >
@@ -570,12 +566,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               accessibilityRole="text"
               style={
                 {
-                  "color": "#141618",
-                  "fontFamily": "EuclidCircularB-Medium",
-                  "fontSize": 14,
-                  "fontWeight": "500",
+                  "color": "#121314",
+                  "fontFamily": "Geist Medium",
+                  "fontSize": 16,
                   "letterSpacing": 0,
-                  "lineHeight": 22,
+                  "lineHeight": 24,
                 }
               }
             >
@@ -585,12 +580,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
                 accessibilityRole="text"
                 style={
                   {
-                    "color": "#6a737d",
-                    "fontFamily": "EuclidCircularB-Regular",
-                    "fontSize": 14,
-                    "fontWeight": "400",
+                    "color": "#686e7d",
+                    "fontFamily": "Geist Regular",
+                    "fontSize": 16,
                     "letterSpacing": 0,
-                    "lineHeight": 22,
+                    "lineHeight": 24,
                   }
                 }
               >
@@ -601,13 +595,12 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               accessibilityRole="text"
               style={
                 {
-                  "color": "#6a737d",
-                  "fontFamily": "EuclidCircularB-RegularItalic",
-                  "fontSize": 12,
+                  "color": "#686e7d",
+                  "fontFamily": "Geist Regular Italic",
+                  "fontSize": 14,
                   "fontStyle": "italic",
-                  "fontWeight": "400",
                   "letterSpacing": 0,
-                  "lineHeight": 20,
+                  "lineHeight": 22,
                 }
               }
             >
@@ -637,14 +630,15 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               {
                 "alignItems": "center",
                 "alignSelf": "flex-start",
-                "backgroundColor": "transparent",
-                "borderColor": "#0376c9",
-                "borderRadius": 24,
+                "backgroundColor": "#3c4d9d0f",
+                "borderColor": "transparent",
+                "borderRadius": 12,
                 "borderWidth": 1,
                 "flex": 1,
                 "flexDirection": "row",
                 "height": 48,
                 "justifyContent": "center",
+                "overflow": "hidden",
                 "paddingHorizontal": 16,
               }
             }
@@ -654,12 +648,11 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               accessibilityRole="text"
               style={
                 {
-                  "color": "#0376c9",
-                  "fontFamily": "EuclidCircularB-Medium",
-                  "fontSize": 14,
-                  "fontWeight": "500",
+                  "color": "#121314",
+                  "fontFamily": "Geist Medium",
+                  "fontSize": 16,
                   "letterSpacing": 0,
-                  "lineHeight": 22,
+                  "lineHeight": 24,
                 }
               }
             >
@@ -677,14 +670,15 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               {
                 "alignItems": "center",
                 "alignSelf": "flex-start",
-                "backgroundColor": "#0376c9",
-                "borderRadius": 24,
+                "backgroundColor": "#121314",
+                "borderRadius": 12,
                 "flex": 1,
                 "flexDirection": "row",
                 "height": 48,
                 "justifyContent": "center",
                 "marginLeft": 16,
                 "marginTop": 0,
+                "overflow": "hidden",
                 "paddingHorizontal": 16,
               }
             }
@@ -695,11 +689,10 @@ exports[`PoolStakingLearnMoreModal render matches snapshot 1`] = `
               style={
                 {
                   "color": "#ffffff",
-                  "fontFamily": "EuclidCircularB-Medium",
-                  "fontSize": 14,
-                  "fontWeight": "500",
+                  "fontFamily": "Geist Medium",
+                  "fontSize": 16,
                   "letterSpacing": 0,
-                  "lineHeight": 22,
+                  "lineHeight": 24,
                 }
               }
             >

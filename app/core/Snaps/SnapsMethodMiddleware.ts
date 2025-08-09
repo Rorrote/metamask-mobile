@@ -8,14 +8,34 @@ import { SnapRpcHookArgs } from '@metamask/snaps-utils';
 import { RestrictedMethods } from '../Permissions/constants';
 import { keyringSnapPermissionsBuilder } from '../SnapKeyring/keyringSnapsPermissions';
 import { SnapId } from '@metamask/snaps-sdk';
-import { EngineContext } from '../Engine';
+import { BaseControllerMessenger, EngineContext } from '../Engine';
 import { handleSnapRequest } from './utils';
+import { captureException } from '@sentry/react-native';
 import {
+  CronjobControllerCancelAction,
+  CronjobControllerGetAction,
+  SnapControllerClearSnapStateAction,
   SnapControllerGetPermittedSnapsAction,
   SnapControllerGetSnapAction,
   SnapControllerGetSnapFileAction,
+  SnapControllerGetSnapStateAction,
   SnapControllerInstallSnapsAction,
-} from '../Engine/controllers/SnapController/constants';
+  SnapControllerUpdateSnapStateAction,
+  SnapInterfaceControllerCreateInterfaceAction,
+  SnapInterfaceControllerResolveInterfaceAction,
+  SnapInterfaceControllerUpdateInterfaceAction,
+  SnapInterfaceControllerUpdateInterfaceStateAction,
+  WebSocketServiceOpenAction,
+  WebSocketServiceCloseAction,
+  WebSocketServiceGetAllAction,
+  WebSocketServiceSendMessageAction,
+} from '../Engine/controllers/snaps';
+import { KeyringTypes } from '@metamask/keyring-controller';
+import { MetaMetrics } from '../../../app/core/Analytics';
+import { MetricsEventBuilder } from '../Analytics/MetricsEventBuilder';
+import { Json } from '@metamask/utils';
+import { SchedulableBackgroundEvent } from '@metamask/snaps-controllers';
+import { endTrace, trace } from '../../util/trace';
 
 export function getSnapIdFromRequest(
   request: Record<string, unknown>,
@@ -29,14 +49,23 @@ export function getSnapIdFromRequest(
     */
 const snapMethodMiddlewareBuilder = (
   engineContext: EngineContext,
-  // TODO: Replace "any" with type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  controllerMessenger: any,
+  controllerMessenger: BaseControllerMessenger,
   origin: string,
   subjectType: SubjectType,
 ) =>
   createSnapsMethodMiddleware(subjectType === SubjectType.Snap, {
-    getUnlockPromise: () => Promise.resolve(),
+    getUnlockPromise: () => {
+      if (engineContext.KeyringController.isUnlocked()) {
+        return Promise.resolve();
+      }
+      return new Promise<void>((resolve) => {
+        controllerMessenger.subscribeOnceIf(
+          'KeyringController:unlock',
+          resolve,
+          () => true,
+        );
+      });
+    },
     getSnaps: controllerMessenger.call.bind(
       controllerMessenger,
       SnapControllerGetPermittedSnapsAction,
@@ -59,7 +88,7 @@ const snapMethodMiddlewareBuilder = (
     getSnapFile: controllerMessenger.call.bind(
       controllerMessenger,
       SnapControllerGetSnapFileAction,
-      origin,
+      origin as SnapId,
     ),
     installSnaps: controllerMessenger.call.bind(
       controllerMessenger,
@@ -71,9 +100,75 @@ const snapMethodMiddlewareBuilder = (
       origin,
       RestrictedMethods.wallet_snap,
     ),
+    createInterface: controllerMessenger.call.bind(
+      controllerMessenger,
+      SnapInterfaceControllerCreateInterfaceAction,
+      origin as SnapId,
+    ),
+    updateInterface: controllerMessenger.call.bind(
+      controllerMessenger,
+      SnapInterfaceControllerUpdateInterfaceAction,
+      origin as SnapId,
+    ),
+    getInterfaceContext: (id: string) =>
+      controllerMessenger.call(
+        'SnapInterfaceController:getInterface',
+        origin as SnapId,
+        id,
+      ).context,
+    getInterfaceState: (id: string) =>
+      controllerMessenger.call(
+        'SnapInterfaceController:getInterface',
+        origin as SnapId,
+        id,
+      ).state,
+    resolveInterface: controllerMessenger.call.bind(
+      controllerMessenger,
+      SnapInterfaceControllerResolveInterfaceAction,
+      origin as SnapId,
+    ),
     getSnap: controllerMessenger.call.bind(
       controllerMessenger,
       SnapControllerGetSnapAction,
+    ),
+    trackError: (error: Error) => captureException(error),
+    trackEvent: (eventPayload: {
+      event: string;
+      properties: Record<string, Json>;
+      sensitiveProperties: Record<string, Json>;
+    }) => {
+      MetaMetrics.getInstance().trackEvent(
+        MetricsEventBuilder.createEventBuilder({
+          category: eventPayload.event,
+          properties: eventPayload.properties,
+          sensitiveProperties: eventPayload.sensitiveProperties,
+        }).build(),
+      );
+    },
+    openWebSocket: controllerMessenger.call.bind(
+      controllerMessenger,
+      WebSocketServiceOpenAction,
+      origin as SnapId,
+    ),
+    closeWebSocket: controllerMessenger.call.bind(
+      controllerMessenger,
+      WebSocketServiceCloseAction,
+      origin as SnapId,
+    ),
+    sendWebSocketMessage: controllerMessenger.call.bind(
+      controllerMessenger,
+      WebSocketServiceSendMessageAction,
+      origin as SnapId,
+    ),
+    getWebSockets: controllerMessenger.call.bind(
+      controllerMessenger,
+      WebSocketServiceGetAllAction,
+      origin as SnapId,
+    ),
+    updateInterfaceState: controllerMessenger.call.bind(
+      controllerMessenger,
+      SnapInterfaceControllerUpdateInterfaceStateAction,
+      origin as SnapId,
     ),
     handleSnapRpcRequest: async (request: Omit<SnapRpcHookArgs, 'origin'>) => {
       const snapId = getSnapIdFromRequest(request);
@@ -91,6 +186,70 @@ const snapMethodMiddlewareBuilder = (
         request: request.request,
       });
     },
+    requestUserApproval:
+      engineContext.ApprovalController.addAndShowApprovalRequest.bind(
+        engineContext.ApprovalController,
+      ),
+    getIsActive: () => true, // For now we consider the app to be always active.
+    getIsLocked: () => !engineContext.KeyringController.isUnlocked(),
+    getEntropySources: () => {
+      const state = controllerMessenger.call('KeyringController:getState');
+
+      return state.keyrings
+        .map((keyring, index) => {
+          if (keyring.type === KeyringTypes.hd) {
+            return {
+              id: keyring.metadata.id,
+              name: keyring.metadata.name,
+              type: 'mnemonic',
+              primary: index === 0,
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
+    },
+    clearSnapState: controllerMessenger.call.bind(
+      controllerMessenger,
+      SnapControllerClearSnapStateAction,
+      origin as SnapId,
+    ),
+    getSnapState: controllerMessenger.call.bind(
+      controllerMessenger,
+      SnapControllerGetSnapStateAction,
+      origin as SnapId,
+    ),
+    updateSnapState: controllerMessenger.call.bind(
+      controllerMessenger,
+      SnapControllerUpdateSnapStateAction,
+      origin as SnapId,
+    ),
+    scheduleBackgroundEvent: (event: SchedulableBackgroundEvent) =>
+      controllerMessenger.call('CronjobController:schedule', {
+        ...event,
+        snapId: origin as SnapId,
+      }),
+    cancelBackgroundEvent: controllerMessenger.call.bind(
+      controllerMessenger,
+      CronjobControllerCancelAction,
+      origin as SnapId,
+    ),
+    getBackgroundEvents: controllerMessenger.call.bind(
+      controllerMessenger,
+      CronjobControllerGetAction,
+      origin as SnapId,
+    ),
+    getNetworkConfigurationByChainId: controllerMessenger.call.bind(
+      controllerMessenger,
+      'NetworkController:getNetworkConfigurationByChainId',
+    ),
+    getNetworkClientById: controllerMessenger.call.bind(
+      controllerMessenger,
+      'NetworkController:getNetworkClientById',
+    ),
+    startTrace: trace,
+    endTrace,
   });
 
 export default snapMethodMiddlewareBuilder;

@@ -1,7 +1,10 @@
-import wallet_switchEthereumChain from './wallet_switchEthereumChain';
+import { wallet_switchEthereumChain } from './wallet_switchEthereumChain';
 import Engine from '../Engine';
 import { mockNetworkState } from '../../util/test/network';
-import MetaMetrics from '../Analytics/MetaMetrics';
+import {
+  Caip25CaveatType,
+  Caip25EndowmentPermissionName,
+} from '@metamask/chain-agnostic-permission';
 
 const existingNetworkConfiguration = {
   id: 'test-network-configuration-id',
@@ -20,6 +23,9 @@ jest.mock('../Engine', () => ({
       setActiveNetwork: jest.fn(),
       getNetworkClientById: jest.fn(),
     },
+    MultichainNetworkController: {
+      setActiveNetwork: jest.fn(),
+    },
     CurrencyRateController: {
       updateExchangeRate: jest.fn(),
     },
@@ -31,6 +37,9 @@ jest.mock('../Engine', () => ({
     SelectedNetworkController: {
       setNetworkClientIdForDomain: jest.fn(),
       getNetworkClientIdForDomain: jest.fn(),
+    },
+    KeyringController: {
+      isUnlocked: jest.fn(),
     },
   },
 }));
@@ -59,19 +68,6 @@ jest.mock('../../store', () => ({
   },
 }));
 
-jest.mock('../Analytics/MetaMetrics');
-
-const mockTrackEvent = jest.fn();
-const mockCreateEventBuilder = jest.fn().mockReturnValue({
-  addProperties: jest.fn().mockReturnThis(),
-  build: jest.fn().mockReturnThis(),
-});
-
-MetaMetrics.getInstance = jest.fn().mockReturnValue({
-  trackEvent: mockTrackEvent,
-  createEventBuilder: mockCreateEventBuilder,
-});
-
 const correctParams = {
   chainId: '0x1',
 };
@@ -80,6 +76,13 @@ const otherOptions = {
   res: {},
   switchCustomNetworkRequest: {},
   requestUserApproval: jest.fn(),
+  hooks: {
+    getCurrentChainIdForDomain: jest.fn(),
+    getNetworkConfigurationByChainId: jest.fn(),
+    getCaveat: jest.fn(),
+    requestPermittedChainsPermissionIncrementalForOrigin: jest.fn(),
+    hasApprovalRequestsForOrigin: jest.fn(),
+  },
 };
 
 describe('RPC Method - wallet_switchEthereumChain', () => {
@@ -145,7 +148,8 @@ describe('RPC Method - wallet_switchEthereumChain', () => {
     }
   });
 
-  it('should should show a modal for user approval and not grant permissions', async () => {
+  it('should not change network permissions and should switch without user approval when chain is already permitted', async () => {
+    const origin = 'https://test.com';
     const spyOnGrantPermissionsIncremental = jest.spyOn(
       Engine.context.PermissionController,
       'grantPermissionsIncremental',
@@ -159,114 +163,113 @@ describe('RPC Method - wallet_switchEthereumChain', () => {
     jest
       .spyOn(Engine.context.NetworkController, 'getNetworkClientById')
       .mockReturnValue({ configuration: { chainId: '0x1' } });
-    const spyOnSetActiveNetwork = jest.spyOn(
-      Engine.context.NetworkController,
-      'setActiveNetwork',
+
+    otherOptions.hooks.getCaveat.mockReturnValue({
+      type: Caip25CaveatType,
+      value: {
+        requiredScopes: {},
+        optionalScopes: {
+          'eip155:100': {
+            accounts: [],
+          },
+        },
+        isMultichainOrigin: false,
+        sessionProperties: {},
+      },
+    });
+    otherOptions.hooks.hasApprovalRequestsForOrigin.mockReturnValue(false);
+
+    const spyOnSetNetworkClientIdForDomain = jest.spyOn(
+      Engine.context.SelectedNetworkController,
+      'setNetworkClientIdForDomain',
     );
+
     await wallet_switchEthereumChain({
       req: {
         params: [{ chainId: '0x64' }],
+        origin,
       },
       ...otherOptions,
     });
-    expect(otherOptions.requestUserApproval).toHaveBeenCalled();
+
+    expect(otherOptions.requestUserApproval).not.toHaveBeenCalled();
     expect(spyOnGrantPermissionsIncremental).not.toHaveBeenCalled();
-    expect(spyOnSetActiveNetwork).toHaveBeenCalledWith(
+    expect(spyOnSetNetworkClientIdForDomain).toHaveBeenCalledWith(
+      origin,
       'test-network-configuration-id',
     );
   });
 
-  describe('MM_CHAIN_PERMISSIONS is enabled', () => {
-    beforeAll(() => {
-      process.env.MM_CHAIN_PERMISSIONS = 'true';
-    });
-    afterAll(() => {
-      process.env.MM_CHAIN_PERMISSIONS = 'false';
-    });
-    it('should not change network permissions and should switch without user approval when chain is already permitted', async () => {
-      const spyOnGrantPermissionsIncremental = jest.spyOn(
-        Engine.context.PermissionController,
-        'grantPermissionsIncremental',
-      );
-      jest
-        .spyOn(
-          Engine.context.SelectedNetworkController,
-          'getNetworkClientIdForDomain',
-        )
-        .mockReturnValue('mainnet');
-      jest
-        .spyOn(Engine.context.NetworkController, 'getNetworkClientById')
-        .mockReturnValue({ configuration: { chainId: '0x1' } });
-      jest
-        .spyOn(Engine.context.PermissionController, 'getCaveat')
-        .mockReturnValue({ value: ['0x64'] });
+  it('should add network permission and should switch with user approval when requested chain is not permitted', async () => {
+    const origin = 'https://test.com';
+    const spyOnGrantPermissionsIncremental = jest.spyOn(
+      Engine.context.PermissionController,
+      'grantPermissionsIncremental',
+    );
 
-      const spyOnSetActiveNetwork = jest.spyOn(
-        Engine.context.NetworkController,
-        'setActiveNetwork',
-      );
-      await wallet_switchEthereumChain({
-        req: {
-          params: [{ chainId: '0x64' }],
-        },
-        ...otherOptions,
-      });
+    jest
+      .spyOn(
+        Engine.context.SelectedNetworkController,
+        'getNetworkClientIdForDomain',
+      )
+      .mockReturnValue('mainnet');
+    jest
+      .spyOn(Engine.context.NetworkController, 'getNetworkClientById')
+      .mockReturnValue({ configuration: { chainId: '0x1' } });
 
-      expect(otherOptions.requestUserApproval).not.toHaveBeenCalled();
-      expect(spyOnGrantPermissionsIncremental).not.toHaveBeenCalled();
-      expect(spyOnSetActiveNetwork).toHaveBeenCalledWith(
-        'test-network-configuration-id',
-      );
+    const spyOnSetNetworkClientIdForDomain = jest.spyOn(
+      Engine.context.SelectedNetworkController,
+      'setNetworkClientIdForDomain',
+    );
+
+    otherOptions.hooks.hasApprovalRequestsForOrigin.mockReturnValue(true);
+    otherOptions.hooks.getCaveat.mockReturnValue({
+      type: Caip25CaveatType,
+      value: {
+        requiredScopes: {},
+        optionalScopes: {},
+        isMultichainOrigin: false,
+        sessionProperties: {},
+      },
     });
 
-    it('should add network permission and should switch with user approval when requested chain is not permitted', async () => {
-      const spyOnGrantPermissionsIncremental = jest.spyOn(
-        Engine.context.PermissionController,
-        'grantPermissionsIncremental',
-      );
-      jest
-        .spyOn(
-          Engine.context.SelectedNetworkController,
-          'getNetworkClientIdForDomain',
-        )
-        .mockReturnValue('mainnet');
-      jest
-        .spyOn(Engine.context.NetworkController, 'getNetworkClientById')
-        .mockReturnValue({ configuration: { chainId: '0x1' } });
-      const spyOnSetActiveNetwork = jest.spyOn(
-        Engine.context.NetworkController,
-        'setActiveNetwork',
-      );
-      jest
-        .spyOn(Engine.context.PermissionController, 'getCaveat')
-        .mockReturnValue({ value: [] });
-      await wallet_switchEthereumChain({
-        req: {
-          params: [{ chainId: '0x64' }],
-          origin: 'https://test.com',
-        },
-        ...otherOptions,
-      });
-      expect(otherOptions.requestUserApproval).toHaveBeenCalled();
-      expect(spyOnGrantPermissionsIncremental).toHaveBeenCalledTimes(1);
-      expect(spyOnGrantPermissionsIncremental).toHaveBeenCalledWith({
-        approvedPermissions: {
-          'endowment:permitted-chains': {
-            caveats: [
-              {
-                type: 'restrictNetworkSwitching',
-                value: ['0x64'],
+    await wallet_switchEthereumChain({
+      req: {
+        params: [{ chainId: '0x64' }],
+        origin,
+      },
+      ...otherOptions,
+    });
+
+    expect(otherOptions.requestUserApproval).toHaveBeenCalled();
+    expect(spyOnGrantPermissionsIncremental).toHaveBeenCalledTimes(1);
+    expect(spyOnGrantPermissionsIncremental).toHaveBeenCalledWith({
+      approvedPermissions: {
+        [Caip25EndowmentPermissionName]: {
+          caveats: [
+            {
+              type: Caip25CaveatType,
+              value: {
+                isMultichainOrigin: false,
+                optionalScopes: {
+                  'eip155:100': {
+                    accounts: [],
+                  },
+                },
+                requiredScopes: {},
+                sessionProperties: {},
               },
-            ],
-          },
+            },
+          ],
         },
-        subject: {
-          origin: 'https://test.com',
-        },
-      });
-      expect(spyOnSetActiveNetwork).toHaveBeenCalledWith(
-        'test-network-configuration-id',
-      );
+      },
+      subject: {
+        origin,
+      },
     });
+    expect(spyOnSetNetworkClientIdForDomain).toHaveBeenCalledWith(
+      origin,
+      'test-network-configuration-id',
+    );
   });
 });

@@ -36,9 +36,11 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
       children,
       onClose,
       onOpen,
+      style,
       isInteractable = true,
       shouldNavigateBack = true,
       isFullscreen = false,
+      keyboardAvoidingViewEnabled = true,
       ...props
     },
     ref,
@@ -93,6 +95,7 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
           Platform.OS === 'ios' ? -screenBottomPadding : frameY
         }
         style={styles.base}
+        enabled={keyboardAvoidingViewEnabled}
         {...props}
       >
         <BottomSheetOverlay
@@ -107,6 +110,8 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
           onOpen={onOpenCB}
           ref={bottomSheetDialogRef}
           isFullscreen={isFullscreen}
+          style={style}
+          keyboardAvoidingViewEnabled={keyboardAvoidingViewEnabled}
         >
           {children}
         </BottomSheetDialog>

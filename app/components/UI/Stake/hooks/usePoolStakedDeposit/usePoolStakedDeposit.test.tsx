@@ -1,16 +1,14 @@
 import { toHex } from '@metamask/controller-utils';
-import usePoolStakedDeposit from './index';
+import { ChainId, PooledStakingContract } from '@metamask/stake-sdk';
+import { Contract } from 'ethers';
+import { MetricsEventBuilder } from '../../../../../core/Analytics/MetricsEventBuilder';
 import { createMockAccountsControllerState } from '../../../../../util/test/accountsControllerTestUtils';
 import { backgroundState } from '../../../../../util/test/initial-root-state';
 import { renderHookWithProvider } from '../../../../../util/test/renderWithProvider';
-import {
-  PooledStakingContract,
-  StakingType,
-  ChainId,
-} from '@metamask/stake-sdk';
-import { Contract } from 'ethers';
+import useMetrics from '../../../../hooks/useMetrics/useMetrics';
+import { EVENT_PROVIDERS } from '../../constants/events';
 import { Stake } from '../../sdk/stakeSdkProvider';
-
+import usePoolStakedDeposit from './index';
 const MOCK_ADDRESS_1 = '0x0';
 const MOCK_NETWORK_CLIENT_ID = 'testNetworkClientId';
 
@@ -43,7 +41,6 @@ const ENCODED_TX_DEPOSIT_DATA = {
   value: { hex: toHex(MOCK_DEPOSIT_VALUE_WEI), type: 'BigNumber' },
 };
 
-const mockConnectSignerOrProvider = jest.fn().mockReturnValue({ provider: {} });
 const mockEstimateDepositGas = jest
   .fn()
   .mockResolvedValue(MOCK_STAKE_DEPOSIT_GAS_LIMIT);
@@ -77,7 +74,6 @@ jest.mock('../../../../../core/Engine', () => {
 
 const mockPooledStakingContractService: PooledStakingContract = {
   chainId: ChainId.ETHEREUM,
-  connectSignerOrProvider: mockConnectSignerOrProvider,
   contract: new Contract('0x0000000000000000000000000000000000000000', []),
   convertToShares: jest.fn(),
   encodeClaimExitedAssetsTransactionData: jest.fn(),
@@ -93,8 +89,6 @@ const mockPooledStakingContractService: PooledStakingContract = {
 
 const mockSdkContext: Stake = {
   stakingContract: mockPooledStakingContractService,
-  sdkType: StakingType.POOLED,
-  setSdkType: jest.fn(),
   networkClientId: MOCK_NETWORK_CLIENT_ID,
 };
 
@@ -102,7 +96,19 @@ jest.mock('../useStakeContext', () => ({
   useStakeContext: () => mockSdkContext,
 }));
 
+jest.mock('../../../../hooks/useMetrics/useMetrics');
+
 describe('usePoolStakedDeposit', () => {
+  const mockTrackEvent = jest.fn();
+  const useMetricsMock = jest.mocked(useMetrics);
+
+  beforeEach(() => {
+    useMetricsMock.mockReturnValue({
+      trackEvent: mockTrackEvent,
+      createEventBuilder: MetricsEventBuilder.createEventBuilder,
+    } as unknown as ReturnType<typeof useMetrics>);
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -117,7 +123,7 @@ describe('usePoolStakedDeposit', () => {
         state: mockInitialState,
       });
 
-      await result.current.attemptDepositTransaction(
+      await result.current.attemptDepositTransaction?.(
         MOCK_DEPOSIT_VALUE_WEI,
         MOCK_RECEIVER_ADDRESS,
       );
@@ -125,6 +131,24 @@ describe('usePoolStakedDeposit', () => {
       expect(mockEncodeDepositTransactionData).toHaveBeenCalledTimes(1);
       expect(mockEstimateDepositGas).toHaveBeenCalledTimes(1);
       expect(mockAddTransaction).toHaveBeenCalledTimes(1);
+
+      await result.current.attemptDepositTransaction?.(
+        MOCK_DEPOSIT_VALUE_WEI,
+        MOCK_RECEIVER_ADDRESS,
+        undefined,
+        true,
+      );
+
+      expect(mockTrackEvent).toHaveBeenCalledTimes(1);
+      expect(mockTrackEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            is_redesigned: true,
+            selected_provider: EVENT_PROVIDERS.CONSENSYS,
+            transaction_amount_eth: '0.01',
+          }),
+        }),
+      );
     });
   });
 });

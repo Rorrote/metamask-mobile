@@ -9,6 +9,15 @@ import { act } from '@testing-library/react-hooks';
 import { MetaMetricsEvents } from '../../hooks/useMetrics';
 import { renderHookWithProvider } from '../../../util/test/renderWithProvider';
 import Engine from '../../../core/Engine';
+import configureMockStore from 'redux-mock-store';
+import { Provider } from 'react-redux';
+
+const mockStore = configureMockStore();
+const mockInitialState = {
+  user: {
+    isConnectionRemoved: false,
+  },
+};
 
 jest.mock('../../../core/Engine', () => ({
   controllerMessenger: {
@@ -34,6 +43,7 @@ const SWAP_TRANSACTIONS_MOCK = {
       token_from_amount: '0.001254',
       token_to: 'USDC',
       token_to_amount: '4.440771',
+      gas_included: false,
     },
     destinationAmount: '4440771',
     destinationToken: {
@@ -94,9 +104,29 @@ describe('Main', () => {
 
   it('should render correctly', () => {
     const MainAppContainer = () => (
-      <NavigationContainer>
-        <Main />
-      </NavigationContainer>
+      <Provider store={mockStore(mockInitialState)}>
+        <NavigationContainer>
+          <Main />
+        </NavigationContainer>
+      </Provider>
+    );
+    const wrapper = shallow(<MainAppContainer />);
+    expect(wrapper).toMatchSnapshot();
+  });
+
+  it('should render correctly with isConnectionRemoved true', () => {
+    const mockInitialStateWithConnectionRemoved = {
+      user: {
+        isConnectionRemoved: true,
+      },
+    };
+
+    const MainAppContainer = () => (
+      <Provider store={mockStore(mockInitialStateWithConnectionRemoved)}>
+        <NavigationContainer>
+          <Main />
+        </NavigationContainer>
+      </Provider>
     );
     const wrapper = shallow(<MainAppContainer />);
     expect(wrapper).toMatchSnapshot();

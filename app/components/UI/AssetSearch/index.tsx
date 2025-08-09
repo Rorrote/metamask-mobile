@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   TextInput,
   View,
@@ -6,6 +6,7 @@ import {
   TextStyle,
   DimensionValue,
 } from 'react-native';
+import { Hex } from '@metamask/utils';
 import { fontStyles } from '../../../styles/common';
 import { strings } from '../../../../locales/i18n';
 import Fuse from 'fuse.js';
@@ -14,7 +15,7 @@ import { useSelector } from 'react-redux';
 import { TokenListToken } from '@metamask/assets-controllers';
 import { useTheme } from '../../../util/theme';
 import { ImportTokenViewSelectorsIDs } from '../../../../e2e/selectors/wallet/ImportTokenView.selectors';
-import { selectTokenListArray } from '../../../selectors/tokenListController';
+import { selectERC20TokensByChain } from '../../../selectors/tokenListController';
 import Icon, {
   IconName,
   IconSize,
@@ -22,14 +23,14 @@ import Icon, {
 import ButtonIcon, {
   ButtonIconSizes,
 } from '../../../component-library/components/Buttons/ButtonIcon';
+import { selectChainId } from '../../../selectors/networkController';
 
 // TODO: Replace "any" with type
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const createStyles = (colors: any) =>
   StyleSheet.create({
     searchSection: {
-      margin: 16,
-      marginBottom: 0,
+      marginTop: 16,
       flex: 1,
       flexDirection: 'row',
       justifyContent: 'center',
@@ -40,7 +41,7 @@ const createStyles = (colors: any) =>
       color: colors.text.default,
     },
     searchSectionFocused: {
-      margin: 16,
+      marginTop: 16,
       marginBottom: 0,
       flex: 1,
       flexDirection: 'row',
@@ -101,16 +102,46 @@ interface Props {
    * Callback that is called when the text input is blurred
    */
   onBlur: () => void;
+
+  /**
+   * Whether all networks are enabled
+   */
+  allNetworksEnabled: boolean;
 }
 
 // eslint-disable-next-line react/display-name
-const AssetSearch = memo(({ onSearch, onFocus, onBlur }: Props) => {
+const AssetSearch = ({
+  onSearch,
+  onFocus,
+  onBlur,
+  allNetworksEnabled,
+}: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [inputDimensions, setInputDimensions] = useState<DimensionValue>('85%');
   const [isFocus, setIsFocus] = useState(false);
-  const tokenList = useSelector(selectTokenListArray);
+  const chainId = useSelector(selectChainId);
+  const tokenListForAllChains = useSelector(selectERC20TokensByChain);
   const { colors, themeAppearance } = useTheme();
   const styles = createStyles(colors);
+
+  const tokenList = useMemo(() => {
+    if (allNetworksEnabled) {
+      return Object.entries(tokenListForAllChains).flatMap(
+        ([networkId, { data }]) =>
+          Object.values(data).map((item) => ({
+            ...item,
+            chainId: networkId,
+          })),
+      );
+    }
+
+    return Object.values(
+      tokenListForAllChains?.[chainId as Hex]?.data ?? [],
+    ).map((item) => ({
+      ...item,
+      chainId: chainId as Hex,
+    }));
+  }, [allNetworksEnabled, tokenListForAllChains, chainId]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -120,14 +151,16 @@ const AssetSearch = memo(({ onSearch, onFocus, onBlur }: Props) => {
 
   // Update fuse list
   useEffect(() => {
-    fuse.setCollection(tokenList);
+    if (Array.isArray(tokenList)) {
+      fuse.setCollection(tokenList);
+    }
   }, [tokenList]);
 
   const handleSearch = useCallback(
     (searchText: string) => {
       setSearchQuery(searchText);
       const fuseSearchResult = fuse.search(searchText);
-      const addressSearchResult = tokenList.filter((token) =>
+      const addressSearchResult = tokenList?.filter((token: TokenListToken) =>
         toLowerCaseEquals(token.address, searchText),
       );
       const results = [...addressSearchResult, ...fuseSearchResult];
@@ -135,6 +168,12 @@ const AssetSearch = memo(({ onSearch, onFocus, onBlur }: Props) => {
     },
     [setSearchQuery, onSearch, tokenList],
   );
+
+  useEffect(() => {
+    setSearchQuery('');
+    handleSearch('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allNetworksEnabled]);
 
   return (
     <View
@@ -176,10 +215,11 @@ const AssetSearch = memo(({ onSearch, onFocus, onBlur }: Props) => {
             setSearchQuery('');
             handleSearch('');
           }}
+          testID={ImportTokenViewSelectorsIDs.CLEAR_SEARCH_BAR}
         />
       </View>
     </View>
   );
-});
+};
 
 export default AssetSearch;

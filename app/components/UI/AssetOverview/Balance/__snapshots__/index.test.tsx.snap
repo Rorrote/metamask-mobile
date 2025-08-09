@@ -1,10 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Balance should render correctly with a fiat balance 1`] = `
+exports[`Balance should render correctly with main and secondary balance 1`] = `
 <View
   style={
     {
       "flex": 1,
+      "paddingHorizontal": 16,
     }
   }
 >
@@ -12,29 +13,26 @@ exports[`Balance should render correctly with a fiat balance 1`] = `
     accessibilityRole="text"
     style={
       {
-        "color": "#141618",
-        "fontFamily": "EuclidCircularB-Bold",
+        "color": "#121314",
+        "fontFamily": "Geist Bold",
         "fontSize": 18,
-        "fontWeight": "700",
         "letterSpacing": 0,
         "lineHeight": 24,
-        "paddingHorizontal": 15,
-        "paddingVertical": 4,
       }
     }
   >
     Your balance
   </Text>
   <TouchableOpacity
+    disabled={false}
     onLongPress={[Function]}
     onPress={[Function]}
     style={
       {
-        "alignItems": "flex-start",
+        "alignItems": "center",
         "flex": 1,
         "flexDirection": "row",
-        "paddingHorizontal": 15,
-        "paddingVertical": 10,
+        "height": 64,
       }
     }
     testID="asset-DAI"
@@ -54,10 +52,10 @@ exports[`Balance should render correctly with a fiat balance 1`] = `
           style={
             {
               "backgroundColor": "#ffffff",
-              "borderRadius": 16,
-              "height": 32,
+              "borderRadius": 20,
+              "height": 40,
               "overflow": "hidden",
-              "width": 32,
+              "width": 40,
             }
           }
         >
@@ -85,17 +83,17 @@ exports[`Balance should render correctly with a fiat balance 1`] = `
           {
             "alignItems": "center",
             "aspectRatio": 1,
+            "bottom": 0,
             "height": 0,
             "justifyContent": "center",
             "position": "absolute",
             "right": 0,
-            "top": 0,
             "transform": [
               {
                 "translateX": 0,
               },
               {
-                "translateY": -0,
+                "translateY": 0,
               },
             ],
           }
@@ -122,12 +120,12 @@ exports[`Balance should render correctly with a fiat balance 1`] = `
                 "alignItems": "center",
                 "backgroundColor": "#ffffff",
                 "borderColor": "#ffffff",
-                "borderRadius": 16,
+                "borderRadius": 8,
                 "borderWidth": 2,
                 "height": 32,
                 "justifyContent": "center",
                 "overflow": "hidden",
-                "shadowColor": "#0000001A",
+                "shadowColor": "#0000001a",
                 "shadowOffset": {
                   "height": 2,
                   "width": 0,
@@ -159,31 +157,14 @@ exports[`Balance should render correctly with a fiat balance 1`] = `
         </View>
       </View>
     </View>
-    <Text
-      accessibilityRole="text"
-      style={
-        {
-          "alignSelf": "center",
-          "color": "#141618",
-          "flex": 1,
-          "fontFamily": "EuclidCircularB-Medium",
-          "fontSize": 16,
-          "fontWeight": "500",
-          "justifyContent": "center",
-          "letterSpacing": 0,
-          "lineHeight": 24,
-          "marginLeft": 20,
-        }
-      }
-    >
-      Dai Stablecoin
-    </Text>
     <View
       style={
         {
-          "alignItems": "flex-end",
-          "alignSelf": "flex-end",
+          "alignContent": "flex-start",
+          "alignItems": "flex-start",
           "flex": 1,
+          "flexDirection": "column",
+          "paddingLeft": 16,
         }
       }
     >
@@ -191,46 +172,82 @@ exports[`Balance should render correctly with a fiat balance 1`] = `
         accessibilityRole="text"
         style={
           {
-            "color": "#141618",
-            "fontFamily": "EuclidCircularB-Medium",
+            "color": "#121314",
+            "fontFamily": "Geist Regular",
             "fontSize": 16,
-            "fontWeight": "500",
             "letterSpacing": 0,
             "lineHeight": 24,
           }
         }
-        testID="fiat-balance-test-id"
       >
-        456
+        Dai Stablecoin
+      </Text>
+      <View>
+        <Text
+          accessibilityRole="text"
+          style={
+            {
+              "color": "#ca3542",
+              "fontFamily": "Geist Medium",
+              "fontSize": 14,
+              "letterSpacing": 0,
+              "lineHeight": 22,
+            }
+          }
+        />
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "flex-end",
+          "flexShrink": 0,
+        }
+      }
+    >
+      <Text
+        accessibilityRole="text"
+        style={
+          {
+            "color": "#121314",
+            "fontFamily": "Geist Medium",
+            "fontSize": 16,
+            "letterSpacing": 0,
+            "lineHeight": 24,
+          }
+        }
+        testID="balance-test-id"
+      >
+        123
       </Text>
       <Text
         accessibilityRole="text"
         style={
           {
-            "color": "#6a737d",
-            "fontFamily": "EuclidCircularB-Regular",
+            "color": "#686e7d",
+            "fontFamily": "CentraNo1-Book",
             "fontSize": 14,
             "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 22,
             "paddingHorizontal": 0,
-            "textTransform": "uppercase",
           }
         }
-        testID="main-balance-test-id"
+        testID="secondary-balance-test-id"
       >
-        123
+        456
       </Text>
     </View>
   </TouchableOpacity>
 </View>
 `;
 
-exports[`Balance should render correctly without a fiat balance 1`] = `
+exports[`Balance should render correctly without a secondary balance 1`] = `
 <View
   style={
     {
       "flex": 1,
+      "paddingHorizontal": 16,
     }
   }
 >
@@ -238,29 +255,26 @@ exports[`Balance should render correctly without a fiat balance 1`] = `
     accessibilityRole="text"
     style={
       {
-        "color": "#141618",
-        "fontFamily": "EuclidCircularB-Bold",
+        "color": "#121314",
+        "fontFamily": "Geist Bold",
         "fontSize": 18,
-        "fontWeight": "700",
         "letterSpacing": 0,
         "lineHeight": 24,
-        "paddingHorizontal": 15,
-        "paddingVertical": 4,
       }
     }
   >
     Your balance
   </Text>
   <TouchableOpacity
+    disabled={false}
     onLongPress={[Function]}
     onPress={[Function]}
     style={
       {
-        "alignItems": "flex-start",
+        "alignItems": "center",
         "flex": 1,
         "flexDirection": "row",
-        "paddingHorizontal": 15,
-        "paddingVertical": 10,
+        "height": 64,
       }
     }
     testID="asset-DAI"
@@ -280,10 +294,10 @@ exports[`Balance should render correctly without a fiat balance 1`] = `
           style={
             {
               "backgroundColor": "#ffffff",
-              "borderRadius": 16,
-              "height": 32,
+              "borderRadius": 20,
+              "height": 40,
               "overflow": "hidden",
-              "width": 32,
+              "width": 40,
             }
           }
         >
@@ -311,17 +325,17 @@ exports[`Balance should render correctly without a fiat balance 1`] = `
           {
             "alignItems": "center",
             "aspectRatio": 1,
+            "bottom": 0,
             "height": 0,
             "justifyContent": "center",
             "position": "absolute",
             "right": 0,
-            "top": 0,
             "transform": [
               {
                 "translateX": 0,
               },
               {
-                "translateY": -0,
+                "translateY": 0,
               },
             ],
           }
@@ -348,12 +362,12 @@ exports[`Balance should render correctly without a fiat balance 1`] = `
                 "alignItems": "center",
                 "backgroundColor": "#ffffff",
                 "borderColor": "#ffffff",
-                "borderRadius": 16,
+                "borderRadius": 8,
                 "borderWidth": 2,
                 "height": 32,
                 "justifyContent": "center",
                 "overflow": "hidden",
-                "shadowColor": "#0000001A",
+                "shadowColor": "#0000001a",
                 "shadowOffset": {
                   "height": 2,
                   "width": 0,
@@ -385,31 +399,14 @@ exports[`Balance should render correctly without a fiat balance 1`] = `
         </View>
       </View>
     </View>
-    <Text
-      accessibilityRole="text"
-      style={
-        {
-          "alignSelf": "center",
-          "color": "#141618",
-          "flex": 1,
-          "fontFamily": "EuclidCircularB-Medium",
-          "fontSize": 16,
-          "fontWeight": "500",
-          "justifyContent": "center",
-          "letterSpacing": 0,
-          "lineHeight": 24,
-          "marginLeft": 20,
-        }
-      }
-    >
-      Dai Stablecoin
-    </Text>
     <View
       style={
         {
-          "alignItems": "flex-end",
-          "alignSelf": "flex-end",
+          "alignContent": "flex-start",
+          "alignItems": "flex-start",
           "flex": 1,
+          "flexDirection": "column",
+          "paddingLeft": 16,
         }
       }
     >
@@ -417,17 +414,51 @@ exports[`Balance should render correctly without a fiat balance 1`] = `
         accessibilityRole="text"
         style={
           {
-            "color": "#6a737d",
-            "fontFamily": "EuclidCircularB-Regular",
-            "fontSize": 14,
-            "fontWeight": "400",
+            "color": "#121314",
+            "fontFamily": "Geist Regular",
+            "fontSize": 16,
             "letterSpacing": 0,
-            "lineHeight": 22,
-            "paddingHorizontal": 0,
-            "textTransform": "uppercase",
+            "lineHeight": 24,
           }
         }
-        testID="main-balance-test-id"
+      >
+        Dai Stablecoin
+      </Text>
+      <View>
+        <Text
+          accessibilityRole="text"
+          style={
+            {
+              "color": "#ca3542",
+              "fontFamily": "Geist Medium",
+              "fontSize": 14,
+              "letterSpacing": 0,
+              "lineHeight": 22,
+            }
+          }
+        />
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "flex-end",
+          "flexShrink": 0,
+        }
+      }
+    >
+      <Text
+        accessibilityRole="text"
+        style={
+          {
+            "color": "#121314",
+            "fontFamily": "Geist Medium",
+            "fontSize": 16,
+            "letterSpacing": 0,
+            "lineHeight": 24,
+          }
+        }
+        testID="balance-test-id"
       >
         123
       </Text>

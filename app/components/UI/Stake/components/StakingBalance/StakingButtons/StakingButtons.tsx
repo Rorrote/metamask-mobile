@@ -1,47 +1,68 @@
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
+import { View, ViewProps } from 'react-native';
+import { useSelector } from 'react-redux';
+import { strings } from '../../../../../../../locales/i18n';
 import Button, {
   ButtonVariants,
 } from '../../../../../../component-library/components/Buttons/Button';
-import { strings } from '../../../../../../../locales/i18n';
-import { View, ViewProps } from 'react-native';
 import { useStyles } from '../../../../../../component-library/hooks';
-import styleSheet from './StakingButtons.styles';
-import { useNavigation } from '@react-navigation/native';
 import Routes from '../../../../../../constants/navigation/Routes';
-import { useMetrics, MetaMetricsEvents } from '../../../../../hooks/useMetrics';
-import { useSelector } from 'react-redux';
-import { selectChainId } from '../../../../../../selectors/networkController';
+import Engine from '../../../../../../core/Engine';
+import { RootState } from '../../../../../../reducers';
+import { earnSelectors } from '../../../../../../selectors/earnController';
+import { selectEvmChainId } from '../../../../../../selectors/networkController';
+import { MetaMetricsEvents, useMetrics } from '../../../../../hooks/useMetrics';
+import { selectPooledStakingEnabledFlag } from '../../../../Earn/selectors/featureFlags';
+import { TokenI } from '../../../../Tokens/types';
 import { EVENT_LOCATIONS } from '../../../constants/events';
 import useStakingChain from '../../../hooks/useStakingChain';
-import Engine from '../../../../../../core/Engine';
+import styleSheet from './StakingButtons.styles';
+import { trace, TraceName } from '../../../../../../util/trace';
 
 interface StakingButtonsProps extends Pick<ViewProps, 'style'> {
+  asset: TokenI;
   hasStakedPositions: boolean;
   hasEthToUnstake: boolean;
 }
 
 const StakingButtons = ({
   style,
+  asset,
   hasStakedPositions,
   hasEthToUnstake,
 }: StakingButtonsProps) => {
   const { navigate } = useNavigation();
+
   const { styles } = useStyles(styleSheet, {});
+
   const { trackEvent, createEventBuilder } = useMetrics();
-  const chainId = useSelector(selectChainId);
+
+  const chainId = useSelector(selectEvmChainId);
+  const isPooledStakingEnabled = useSelector(selectPooledStakingEnabledFlag);
+
   const { isStakingSupportedChain } = useStakingChain();
-  const { NetworkController } = Engine.context;
+
+  const { MultichainNetworkController } = Engine.context;
 
   const handleIsStakingSupportedChain = async () => {
     if (!isStakingSupportedChain) {
-      await NetworkController.setActiveNetwork('mainnet');
+      await MultichainNetworkController.setActiveNetwork('mainnet');
     }
   };
 
+  const { outputToken } = useSelector((state: RootState) =>
+    earnSelectors.selectEarnTokenPair(state, asset),
+  );
+
   const onUnstakePress = async () => {
+    trace({ name: TraceName.EarnWithdrawScreen });
     await handleIsStakingSupportedChain();
     navigate('StakeScreens', {
       screen: Routes.STAKING.UNSTAKE,
+      params: {
+        token: outputToken,
+      },
     });
     trackEvent(
       createEventBuilder(MetaMetricsEvents.STAKE_WITHDRAW_BUTTON_CLICKED)
@@ -56,8 +77,14 @@ const StakingButtons = ({
   };
 
   const onStakePress = async () => {
+    trace({ name: TraceName.EarnDepositScreen });
     await handleIsStakingSupportedChain();
-    navigate('StakeScreens', { screen: Routes.STAKING.STAKE });
+    navigate('StakeScreens', {
+      screen: Routes.STAKING.STAKE,
+      params: {
+        token: asset,
+      },
+    });
     trackEvent(
       createEventBuilder(MetaMetricsEvents.STAKE_BUTTON_CLICKED)
         .addProperties({
@@ -81,17 +108,19 @@ const StakingButtons = ({
           onPress={onUnstakePress}
         />
       )}
-      <Button
-        testID={'stake-more-button'}
-        style={styles.balanceActionButton}
-        variant={ButtonVariants.Secondary}
-        label={
-          hasStakedPositions
-            ? strings('stake.stake_more')
-            : strings('stake.stake')
-        }
-        onPress={onStakePress}
-      />
+      {isPooledStakingEnabled && (
+        <Button
+          testID={'stake-more-button'}
+          style={styles.balanceActionButton}
+          variant={ButtonVariants.Secondary}
+          label={
+            hasStakedPositions
+              ? strings('stake.stake_more')
+              : strings('stake.stake')
+          }
+          onPress={onStakePress}
+        />
+      )}
     </View>
   );
 };

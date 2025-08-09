@@ -16,14 +16,15 @@ import images from '../../../../../../images/image-icons';
 import AccountTag from '../AccountTag/AccountTag';
 import { selectNetworkName } from '../../../../../../selectors/networkInfos';
 import { AccountCardProps } from './AccountCard.types';
-import { useStakeContext } from '../../../hooks/useStakeContext';
 import ContractTag from '../ContractTag/ContractTag';
 import { RootState } from '../../../../BasicFunctionality/BasicFunctionalityModal/BasicFunctionalityModal.test';
+import useVaultMetadata from '../../../hooks/useVaultMetadata';
 
 const AccountCard = ({
   contractName,
   primaryLabel,
   secondaryLabel,
+  chainId,
 }: AccountCardProps) => {
   const { styles } = useStyles(styleSheet, {});
 
@@ -35,11 +36,11 @@ const AccountCard = ({
     (state: RootState) => state.settings.useBlockieIcon,
   );
 
-  const { stakingContract } = useStakeContext();
+  const { vaultMetadata } = useVaultMetadata(chainId);
 
   return (
     <View>
-      <Card style={styles.cardGroupTop} disabled>
+      <Card testID="account-card" style={styles.cardGroupTop} disabled>
         {account && (
           <KeyValueRow
             field={{ label: { text: primaryLabel } }}
@@ -61,9 +62,7 @@ const AccountCard = ({
           value={{
             label: (
               <ContractTag
-                contractAddress={
-                  stakingContract?.contract.address ?? contractName
-                }
+                contractAddress={vaultMetadata?.vaultAddress ?? contractName}
                 contractName={contractName}
                 useBlockieIcon={useBlockieIcon}
               />

@@ -67,6 +67,33 @@ import migration63 from './063';
 import migration64 from './064';
 import migration65 from './065';
 import migration66 from './066';
+import migration67 from './067';
+import migration68 from './068';
+import migration69 from './069';
+import migration70 from './070';
+import migration71 from './071';
+import migration72 from './072';
+import migration73 from './073';
+import migration74 from './074';
+import migration75 from './075';
+import migration76 from './076';
+import migration77 from './077';
+import migration78 from './078';
+import migration79 from './079';
+import migration80 from './080';
+import migration81 from './081';
+import migration82 from './082';
+import migration83 from './083';
+import migration84 from './084';
+import migration85 from './085';
+import migration86 from './086';
+import migration87 from './087';
+import migration88 from './088';
+import migration89 from './089';
+import migration90 from './090';
+import migration91 from './091';
+
+// Add migrations above this line
 import { validatePostMigrationState } from '../validateMigration/validateMigration';
 import { RootState } from '../../reducers';
 
@@ -148,6 +175,31 @@ export const migrationList: MigrationsList = {
   64: migration64,
   65: migration65,
   66: migration66,
+  67: migration67,
+  68: migration68,
+  69: migration69,
+  70: migration70,
+  71: migration71,
+  72: migration72,
+  73: migration73,
+  74: migration74,
+  75: migration75,
+  76: migration76,
+  77: migration77,
+  78: migration78,
+  79: migration79,
+  80: migration80,
+  81: migration81,
+  82: migration82,
+  83: migration83,
+  84: migration84,
+  85: migration85,
+  86: migration86,
+  87: migration87,
+  88: migration88,
+  89: migration89,
+  90: migration90,
+  91: migration91,
 };
 
 // Enable both synchronous and asynchronous migrations

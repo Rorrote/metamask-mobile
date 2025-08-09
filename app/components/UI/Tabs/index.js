@@ -5,10 +5,10 @@ import {
   InteractionManager,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Text from '../../../component-library/components/Texts/Text';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { strings } from '../../../../locales/i18n';
@@ -38,6 +38,7 @@ const createStyles = (colors, shadows) =>
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.background.alternative,
+      paddingHorizontal: 16,
     },
     noTabsTitle: {
       ...fontStyles.normal,
@@ -246,6 +247,7 @@ class Tabs extends PureComponent {
         style={styles.tabs}
         contentContainerStyle={styles.tabsContent}
         ref={this.scrollview}
+        testID={BrowserViewSelectorsIDs.TABS_COMPONENT}
       >
         {tabs.map((tab) => (
           // eslint-disable-next-line react/jsx-key

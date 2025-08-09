@@ -11,6 +11,8 @@ let BUILD_IOS = IS_OSX;
 let IS_NODE = false;
 let BUILD_ANDROID = true
 let INSTALL_PODS;
+// GitHub CI pipeline flag - defaults to false
+let GITHUB_CI = false;
 const args = process.argv.slice(2) || [];
 for (const arg of args) {
   switch (arg) {
@@ -31,6 +33,9 @@ for (const arg of args) {
       continue;
     case '--no-build-android':
       BUILD_ANDROID = false
+      continue;
+    case '--build-on-github-ci':
+      GITHUB_CI = true;
       continue;
     default:
       throw new Error(`Unrecognized CLI arg ${arg}`);
@@ -112,16 +117,16 @@ const copyAndSourceEnvVarsTask = {
 const buildPpomTask = {
   title: 'Build PPOM',
   task: (_, task) => {
-    if (IS_NODE) {
-      return task.skip('Skipping building PPOM.');
-    }
     const $ppom = $({ cwd: 'ppom' });
 
     return task.newListr(
       [
         {
           title: 'Clean',
-          task: async () => {
+          task: async (_, task) => {
+            if (GITHUB_CI) {
+              return task.skip('Skipping clean in GitHub CI.');
+            }
             await $ppom`yarn clean`;
           },
         },
@@ -163,13 +168,19 @@ const setupIosTask = {
     const tasks = [
       {
         title: 'Install bundler gem',
-        task: async () => {
+        task: async (_, task) => {
+          if (GITHUB_CI) {
+            return task.skip('Skipping bundler gem installation in GitHub CI.');
+          }
           await $`gem install bundler -v 2.5.8`;
         },
       },
       {
         title: 'Install gems',
-        task: async () => {
+        task: async (_, task) => {
+          if (GITHUB_CI) {
+            return task.skip('Skipping gems installation in GitHub CI.');
+          }
           await $`yarn gem:bundle:install`;
         },
       },
@@ -207,18 +218,9 @@ const buildInpageBridgeTask = {
     if (IS_NODE) {
       return task.skip('Skipping building inpage bridge.');
     }
-    await $`./scripts/build-inpage-bridge.sh`;
-  },
-};
-
-const nodeifyTask = {
-  // TODO: find a saner alternative to bring node modules into react native bundler. See ReactNativify
-  title: 'Nodeify npm packages',
-  task: async (_, task) => {
-    if (IS_NODE) {
-      return task.skip('Skipping nodeifying npm packages.');
-    }
-    await $`node_modules/.bin/rn-nodeify --install crypto,buffer,react-native-randombytes,vm,stream,http,https,os,url,net,fs --hack`;
+    // Ensure the build type is passed to the script
+    const buildType = process.env.METAMASK_BUILD_TYPE || '';
+    await $({ env: { METAMASK_BUILD_TYPE: buildType } })`./scripts/build-inpage-bridge.sh`;
   },
 };
 
@@ -238,7 +240,57 @@ const jetifyTask = {
 const patchPackageTask = {
   title: 'Patch npm packages',
   task: async () => {
-    await $`yarn patch-package`;
+    await $`yarn patch-package --error-on-fail`;
+  },
+};
+
+const installFoundryTask = {
+  title: 'Install Foundry',
+  task: (_, task) =>
+    task.newListr(
+      [
+        {
+          title: 'Install Foundry binary',
+          task: async () => {
+            await $`yarn install:foundryup`;
+          },
+        },
+        {
+          title: 'Verify installation',
+          task: async () => {
+            const anvilPath = 'node_modules/.bin/anvil';
+            if (!fs.existsSync(anvilPath)) {
+              await $`rm -rf .metamask/cache`;
+              await $`yarn install:foundryup`;
+            }
+          },
+        },
+      ],
+      {
+        concurrent: false,
+        exitOnError: true,
+        rendererOptions,
+      },
+    ),
+};
+
+const expoBuildLinks = {
+  title: 'Try EXPO!',
+  task: async () => {
+    function hyperlink(label, url) {
+      return `\x1b]8;;${url}\x1b\\${label}\x1b]8;;\x1b\\`;
+    }
+
+    console.log(`
+     Setup complete! Consider getting started with EXPO on MetaMask. Here are the 3 easy steps to get up and running.
+
+     Step 1: Install EXPO Executable
+      📱 ${hyperlink('iOS .ipa (physical devices) Note: it requires Apple Registration with MetaMask', 'https://app.runway.team/bucket/MV2BJmn6D5_O7nqGw8jHpATpEA4jkPrBB4EcWXC6wV7z8jgwIbAsDhE5Ncl7KwF32qRQQD9YrahAIaxdFVvLT4v3UvBcViMtT3zJdMMfkXDPjSdqVGw=')}
+      🤖 ${hyperlink('iOS .app (iOS simulator unzip the file and drag in simulator)', 'https://app.runway.team/bucket/aCddXOkg1p_nDryri-FMyvkC9KRqQeVT_12sf6Nw0u6iGygGo6BlNzjD6bOt-zma260EzAxdpXmlp2GQphp3TN1s6AJE4i6d_9V0Tv5h4pHISU49dFk=')}
+      🤖 ${hyperlink('Android .apk (physical devices & emulators)', 'https://app.runway.team/bucket/hykQxdZCEGgoyyZ9sBtkhli8wupv9PiTA6uRJf3Lh65FTECF1oy8vzkeXdmuJKhm7xGLeV35GzIT1Un7J5XkBADm5OhknlBXzA0CzqB767V36gi1F3yg3Uss')}
+     Step 2: 👀 yarn watch or yarn watch:clean
+     Step 3: 🚀 launch app on emulator or scan QR code in terminal
+      `);
   },
 };
 
@@ -311,6 +363,13 @@ const generateTermsOfUseTask = {
     ),
 };
 
+const installHuskyTask = {
+  title: 'Install Husky git hooks',
+  task: async () => {
+    await $`npx husky install`;
+  },
+};
+
 /**
  * Tasks that changes node modules and should run sequentially
  */
@@ -323,10 +382,12 @@ const prepareDependenciesTask = {
         updateGitSubmodulesTask,
         // Inpage bridge must generate before node modules are altered
         buildInpageBridgeTask,
-        nodeifyTask,
         jetifyTask,
         runLavamoatAllowScriptsTask,
         patchPackageTask,
+        installFoundryTask,
+        expoBuildLinks,
+        installHuskyTask,
       ],
       {
         exitOnError: true,

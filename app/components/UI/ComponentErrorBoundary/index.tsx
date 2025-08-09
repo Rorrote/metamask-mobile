@@ -25,7 +25,10 @@ interface ComponentErrorBoundaryState {
   error: Error | null;
 }
 
-class ComponentErrorBoundary extends React.Component<ComponentErrorBoundaryProps, ComponentErrorBoundaryState> {
+class ComponentErrorBoundary extends React.Component<
+  ComponentErrorBoundaryProps,
+  ComponentErrorBoundaryState
+> {
   state: ComponentErrorBoundaryState = { error: null };
 
   static getDerivedStateFromError(error: Error): ComponentErrorBoundaryState {
@@ -38,10 +41,11 @@ class ComponentErrorBoundary extends React.Component<ComponentErrorBoundaryProps
     const { componentLabel, dontTrackAsError } = this.props;
 
     if (dontTrackAsError) {
-      return trackErrorAsAnalytics(
+      trackErrorAsAnalytics(
         `Component Error Boundary: ${componentLabel}`,
         error?.message,
       );
+      return;
     }
     Logger.error(error, { View: this.props.componentLabel, ...errorInfo });
   }

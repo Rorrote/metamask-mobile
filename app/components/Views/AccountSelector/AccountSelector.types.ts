@@ -39,6 +39,14 @@ export interface AccountSelectorParams {
    * Optional boolean to indicate if privacy mode is disabled.
    */
   disablePrivacyMode?: boolean;
+  /**
+   * Optional navigation screen to indicate if should navigate to add account actions sheet.
+   */
+  navigateToAddAccountActions?: AccountSelectorScreens.AddAccountActions;
+  /**
+   * Only show EVM accounts.
+   */
+  isEvmOnly?: boolean;
 }
 
 /**

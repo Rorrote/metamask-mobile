@@ -4,24 +4,36 @@ import {
   BtcAccountType,
   SolAccountType,
   EthMethod,
-  EthScopes,
-  BtcScopes,
-  SolScopes,
+  EthScope,
+  BtcScope,
+  SolScope,
   KeyringAccountType,
   BtcMethod,
   SolMethod,
+  CaipChainId,
+  AnyAccountType,
 } from '@metamask/keyring-api';
 import { InternalAccount } from '@metamask/keyring-internal-api';
-import { AccountsControllerState } from '@metamask/accounts-controller';
-import { KeyringTypes } from '@metamask/keyring-controller';
+import {
+  AccountId,
+  AccountsControllerState,
+} from '@metamask/accounts-controller';
+import {
+  KeyringControllerState,
+  KeyringTypes,
+} from '@metamask/keyring-controller';
 import {
   mockQrKeyringAddress,
+  mockSecondHDKeyringAddress,
   mockSimpleKeyringAddress,
   mockSnapAddress1,
   mockSnapAddress2,
+  mockSolanaAddress,
+  MOCK_ENTROPY_SOURCE,
+  MOCK_ENTROPY_SOURCE_2,
 } from './keyringControllerTestUtils';
 
-export function createMockUuidFromAddress(address: string): string {
+export function createMockUuidFromAddress(address: string): AccountId {
   const fakeShaFromAddress = Array.from(
     { length: 16 },
     (_, i) => address.charCodeAt(i) || 0,
@@ -36,18 +48,27 @@ export function createMockUuidFromAddress(address: string): string {
  * @param accountType - The type of account (ETH, BTC, or Solana)
  * @returns Array of scopes corresponding to the account type
  */
-function getAccountTypeScopes(accountType: KeyringAccountType): string[] {
+function getAccountTypeScopes(accountType: KeyringAccountType): CaipChainId[] {
   // Define scope mappings
-  const scopeMappings = {
+  const scopeMappings: Record<KeyringAccountType, CaipChainId[]> = {
     // Ethereum account types
-    [EthAccountType.Eoa]: [EthScopes.Namespace],
-    [EthAccountType.Erc4337]: [EthScopes.Namespace],
+    [EthAccountType.Eoa]: [EthScope.Eoa],
+    [EthAccountType.Erc4337]: [EthScope.Testnet],
 
     // Bitcoin account types
-    [BtcAccountType.P2wpkh]: [BtcScopes.Namespace],
+    [BtcAccountType.P2wpkh]: [BtcScope.Mainnet],
+    [BtcAccountType.P2pkh]: [BtcScope.Mainnet],
+    [BtcAccountType.P2sh]: [BtcScope.Mainnet],
+    [BtcAccountType.P2tr]: [BtcScope.Mainnet],
 
     // Solana account types
-    [SolAccountType.DataAccount]: [SolScopes.Namespace],
+    [SolAccountType.DataAccount]: [SolScope.Mainnet],
+
+    // Generic account type
+    //
+    // This account type is valid only in Flask and is intended to be used
+    // only during the integration of new blockchains.
+    [AnyAccountType.Account]: ['any:scope'],
   };
 
   const scopes = scopeMappings[accountType];
@@ -103,7 +124,45 @@ export function createMockInternalAccount(
 export function createMockSnapInternalAccount(
   address: string,
   nickname: string,
+  accountType: KeyringAccountType = EthAccountType.Eoa,
+  entropySource: string = '',
 ): InternalAccount {
+  let methods: string[] = [];
+  switch (accountType) {
+    case EthAccountType.Eoa:
+      methods = [
+        EthMethod.PersonalSign,
+        EthMethod.SignTransaction,
+        EthMethod.SignTypedDataV1,
+        EthMethod.SignTypedDataV3,
+        EthMethod.SignTypedDataV4,
+      ];
+      break;
+    case BtcAccountType.P2wpkh:
+      methods = [BtcMethod.SendBitcoin];
+      break;
+    case SolAccountType.DataAccount:
+      methods = [SolMethod.SendAndConfirmTransaction];
+      break;
+    default:
+      throw new Error(`Unsupported account type: ${accountType}`);
+  }
+
+  let type: KeyringAccountType;
+  switch (accountType) {
+    case EthAccountType.Eoa:
+      type = EthAccountType.Eoa;
+      break;
+    case BtcAccountType.P2wpkh:
+      type = BtcAccountType.P2wpkh;
+      break;
+    case SolAccountType.DataAccount:
+      type = SolAccountType.DataAccount;
+      break;
+    default:
+      throw new Error(`Unsupported account type: ${accountType}`);
+  }
+
   return {
     address,
     id: createMockUuidFromAddress(address),
@@ -119,25 +178,24 @@ export function createMockSnapInternalAccount(
         enabled: true,
       },
     },
-    options: {},
-    methods: [
-      EthMethod.PersonalSign,
-      EthMethod.SignTransaction,
-      EthMethod.SignTypedDataV1,
-      EthMethod.SignTypedDataV3,
-      EthMethod.SignTypedDataV4,
-    ],
-    type: EthAccountType.Eoa,
-    scopes: [EthScopes.Namespace],
+    options: {
+      entropySource,
+    },
+    methods,
+    type,
+    scopes: getAccountTypeScopes(accountType),
   };
 }
 
 export const MOCK_ACCOUNT_BIP122_P2WPKH: InternalAccount = {
   id: 'ae247df6-3911-47f7-9e36-28e6a7d96078',
   address: 'bc1qwl8399fz829uqvqly9tcatgrgtwp3udnhxfq4k',
-  options: {},
+  options: {
+    scope: BtcScope.Mainnet,
+    index: 0,
+  },
   methods: [BtcMethod.SendBitcoin],
-  scopes: [BtcScopes.Mainnet],
+  scopes: [BtcScope.Mainnet],
   type: BtcAccountType.P2wpkh,
   metadata: {
     name: 'Bitcoin Account',
@@ -150,9 +208,12 @@ export const MOCK_ACCOUNT_BIP122_P2WPKH: InternalAccount = {
 export const MOCK_ACCOUNT_BIP122_P2WPKH_TESTNET: InternalAccount = {
   id: 'fcdafe8b-4bdf-4e25-9051-e255b2a0af5f',
   address: 'tb1q6rmsq3vlfdhjdhtkxlqtuhhlr6pmj09y6w43g8',
-  options: {},
+  options: {
+    scope: BtcScope.Testnet,
+    index: 0,
+  },
   methods: [BtcMethod.SendBitcoin],
-  scopes: [BtcScopes.Testnet],
+  scopes: [BtcScope.Testnet],
   type: BtcAccountType.P2wpkh,
   metadata: {
     name: 'Bitcoin Testnet Account',
@@ -167,7 +228,11 @@ export const MOCK_SOLANA_ACCOUNT: InternalAccount = {
   id: '1',
   type: SolAccountType.DataAccount,
   methods: [SolMethod.SendAndConfirmTransaction],
-  options: {},
+  options: {
+    imported: false,
+    scope: SolScope.Mainnet,
+    entropySource: 'mock-keyring-id',
+  },
   metadata: {
     name: 'Solana Account',
     importTime: 1684232000456,
@@ -180,7 +245,7 @@ export const MOCK_SOLANA_ACCOUNT: InternalAccount = {
       enabled: true,
     },
   },
-  scopes: [SolScopes.Mainnet, SolScopes.Testnet, SolScopes.Devnet],
+  scopes: [SolScope.Mainnet, SolScope.Testnet, SolScope.Devnet],
 };
 
 export const MOCK_MULTICHAIN_NON_EVM_ACCOUNTS = {
@@ -201,25 +266,98 @@ export const expectedUuid2 = createMockUuidFromAddress(
   MOCK_ADDRESS_2.toLowerCase(),
 );
 
-export const internalAccount1 = createMockInternalAccount(
-  MOCK_ADDRESS_1.toLowerCase(),
-  'Account 1',
+export const internalAccount1: InternalAccount = {
+  ...createMockInternalAccount(MOCK_ADDRESS_1.toLowerCase(), 'Account 1'),
+  options: {
+    entropySource: MOCK_ENTROPY_SOURCE,
+  },
+};
+export const internalAccount2: InternalAccount = {
+  ...createMockInternalAccount(MOCK_ADDRESS_2.toLowerCase(), 'Account 2'),
+  options: {
+    entropySource: MOCK_ENTROPY_SOURCE,
+  },
+};
+
+export const internalSolanaAccount1: InternalAccount = {
+  ...createMockInternalAccount(
+    mockSolanaAddress,
+    'Solana Account',
+    KeyringTypes.snap,
+  ),
+  options: {
+    imported: true,
+    entropySource: MOCK_ENTROPY_SOURCE,
+  },
+};
+
+export const expectedSecondHDKeyringUuid = createMockUuidFromAddress(
+  mockSecondHDKeyringAddress,
 );
-export const internalAccount2 = createMockInternalAccount(
-  MOCK_ADDRESS_2.toLowerCase(),
-  'Account 2',
-);
+
+export const mockSecondHDKeyringInternalAccount = {
+  ...createMockInternalAccount(
+    mockSecondHDKeyringAddress,
+    'Second HD Keyring Account',
+    KeyringTypes.hd,
+  ),
+  options: {
+    entropySource: MOCK_ENTROPY_SOURCE_2,
+  },
+};
 
 // used as a default mock for other tests
 export const MOCK_ACCOUNTS_CONTROLLER_STATE: AccountsControllerState = {
   internalAccounts: {
     accounts: {
-      [expectedUuid]: internalAccount1,
-      [expectedUuid2]: internalAccount2,
+      [internalAccount1.id]: internalAccount1,
+      [internalAccount2.id]: internalAccount2,
     },
-    selectedAccount: expectedUuid2,
+    selectedAccount: internalAccount2.id,
   },
 };
+
+export const MOCK_ACCOUNTS_CONTROLLER_STATE_WITH_SOLANA: AccountsControllerState =
+  {
+    ...MOCK_ACCOUNTS_CONTROLLER_STATE,
+    internalAccounts: {
+      ...MOCK_ACCOUNTS_CONTROLLER_STATE.internalAccounts,
+      accounts: {
+        ...MOCK_ACCOUNTS_CONTROLLER_STATE.internalAccounts.accounts,
+        [internalSolanaAccount1.id]: internalSolanaAccount1,
+      },
+    },
+  };
+
+export const MOCK_KEYRING_CONTROLLER_STATE: KeyringControllerState = {
+  isUnlocked: true,
+  keyrings: [
+    {
+      type: 'HD Key Tree',
+      accounts: [internalAccount1.address, internalAccount2.address],
+      metadata: {
+        id: MOCK_ENTROPY_SOURCE,
+        name: '',
+      },
+    },
+  ],
+};
+
+export const MOCK_KEYRING_CONTROLLER_STATE_WITH_SOLANA: KeyringControllerState =
+  {
+    ...MOCK_KEYRING_CONTROLLER_STATE,
+    keyrings: [
+      ...MOCK_KEYRING_CONTROLLER_STATE.keyrings,
+      {
+        type: 'Snap keyring',
+        accounts: [internalSolanaAccount1.address],
+        metadata: {
+          id: 'mock-snap-keyring-id',
+          name: '',
+        },
+      },
+    ],
+  };
 
 // account IDs for different account types from MOCK_KEYRING_CONTROLLER_STATE
 export const mockQRHardwareAccountId =
@@ -257,11 +395,11 @@ const mockSnapAccount2InternalAccount: InternalAccount =
 
 export const MOCK_ACCOUNTS_CONTROLLER_STATE_WITH_KEYRING_TYPES: AccountsControllerState =
   {
-    ...MOCK_ACCOUNTS_CONTROLLER_STATE,
+    ...MOCK_ACCOUNTS_CONTROLLER_STATE_WITH_SOLANA,
     internalAccounts: {
-      ...MOCK_ACCOUNTS_CONTROLLER_STATE.internalAccounts,
+      ...MOCK_ACCOUNTS_CONTROLLER_STATE_WITH_SOLANA.internalAccounts,
       accounts: {
-        ...MOCK_ACCOUNTS_CONTROLLER_STATE.internalAccounts.accounts,
+        ...MOCK_ACCOUNTS_CONTROLLER_STATE_WITH_SOLANA.internalAccounts.accounts,
         [mockQRHardwareAccountId]: mockQRHardwareInternalAccount,
         [mockSimpleKeyringAccountId]: mockSimpleKeyringInternalAccount,
         [mockSnapAccount1Id]: mockSnapAccount1InternalAccount,
@@ -276,6 +414,7 @@ export const MOCK_ACCOUNTS_CONTROLLER_STATE_WITH_KEYRING_TYPES: AccountsControll
             },
           },
         },
+        [expectedSecondHDKeyringUuid]: mockSecondHDKeyringInternalAccount,
       },
     },
   };

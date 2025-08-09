@@ -17,20 +17,9 @@ import BottomSheet, {
 } from '../../../component-library/components/BottomSheets/BottomSheet';
 import AccountAction from '../AccountAction/AccountAction';
 import { IconName } from '../../../component-library/components/Icons/Icon';
-import {
-  findBlockExplorerForRpc,
-  getBlockExplorerName,
-} from '../../../util/networks';
-import {
-  getEtherscanAddressUrl,
-  getEtherscanBaseUrl,
-} from '../../../util/etherscan';
+
 import { MetaMetricsEvents } from '../../../core/Analytics';
-import { RPC } from '../../../constants/network';
-import {
-  selectNetworkConfigurations,
-  selectProviderConfig,
-} from '../../../selectors/networkController';
+import { selectProviderConfig } from '../../../selectors/networkController';
 import { strings } from '../../../../locales/i18n';
 // Internal dependencies
 import styleSheet from './AccountActions.styles';
@@ -41,6 +30,7 @@ import { AccountActionsBottomSheetSelectorsIDs } from '../../../../e2e/selectors
 import { useMetrics } from '../../../components/hooks/useMetrics';
 import {
   isHardwareAccount,
+  isHDOrFirstPartySnapAccount,
   ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
   isSnapAccount,
   ///: END:ONLY_INCLUDE_IF
@@ -53,7 +43,10 @@ import { forgetLedger } from '../../../core/Ledger/Ledger';
 import Engine from '../../../core/Engine';
 import BlockingActionModal from '../../UI/BlockingActionModal';
 import { useTheme } from '../../../util/theme';
-import { Hex } from '@metamask/utils';
+import { useEIP7702Networks } from '../confirmations/hooks/7702/useEIP7702Networks';
+import { isEvmAccountType } from '@metamask/keyring-api';
+import { toHex } from '@metamask/controller-utils';
+import { getMultichainBlockExplorer } from '../../../core/Multichain/networks';
 
 interface AccountActionsParams {
   selectedAccount: InternalAccount;
@@ -68,6 +61,9 @@ const AccountActions = () => {
   const { navigate } = useNavigation();
   const dispatch = useDispatch();
   const { trackEvent, createEventBuilder } = useMetrics();
+  const { networkSupporting7702Present } = useEIP7702Networks(
+    selectedAccount.address,
+  );
 
   const [blockingModalVisible, setBlockingModalVisible] = useState(false);
 
@@ -76,24 +72,26 @@ const AccountActions = () => {
     return { KeyringController, PreferencesController };
   }, []);
 
+  const keyringId = useMemo(
+    () => selectedAccount.options.entropySource,
+    [selectedAccount.options.entropySource],
+  );
+
   const providerConfig = useSelector(selectProviderConfig);
 
   const selectedAddress = selectedAccount?.address;
   const keyring = selectedAccount?.metadata.keyring;
 
-  const networkConfigurations = useSelector(selectNetworkConfigurations);
-
-  const blockExplorer = useMemo(() => {
-    if (providerConfig?.rpcUrl && providerConfig.type === RPC) {
-      return findBlockExplorerForRpc(
-        providerConfig.rpcUrl,
-        networkConfigurations,
-      );
-    }
-    return null;
-  }, [networkConfigurations, providerConfig.rpcUrl, providerConfig.type]);
-
-  const blockExplorerName = getBlockExplorerName(blockExplorer);
+  const blockExplorer:
+    | {
+        url: string;
+        title: string;
+        blockExplorerName: string;
+      }
+    | undefined = useMemo(
+    () => getMultichainBlockExplorer(selectedAccount),
+    [selectedAccount],
+  );
 
   const goToBrowserUrl = (url: string, title: string) => {
     navigate('Webview', {
@@ -105,24 +103,11 @@ const AccountActions = () => {
     });
   };
 
-  const viewInEtherscan = () => {
+  const viewOnBlockExplorer = () => {
     sheetRef.current?.onCloseBottomSheet(() => {
       if (blockExplorer) {
-        const url = `${blockExplorer}/address/${selectedAddress}`;
-        const title = new URL(blockExplorer).hostname;
-        goToBrowserUrl(url, title);
-      } else {
-        const url = getEtherscanAddressUrl(
-          providerConfig.type,
-          selectedAddress,
-        );
-        const etherscan_url = getEtherscanBaseUrl(providerConfig.type).replace(
-          'https://',
-          '',
-        );
-        goToBrowserUrl(url, etherscan_url);
+        goToBrowserUrl(blockExplorer.url, blockExplorer.title);
       }
-
       trackEvent(
         createEventBuilder(
           MetaMetricsEvents.NAVIGATION_TAPS_VIEW_ETHERSCAN,
@@ -167,6 +152,24 @@ const AccountActions = () => {
     });
   };
 
+  const goToSwitchAccountType = () => {
+    navigate(Routes.CONFIRMATION_SWITCH_ACCOUNT_TYPE, {
+      screen: Routes.CONFIRMATION_SWITCH_ACCOUNT_TYPE,
+      params: {
+        address: selectedAddress,
+      },
+    });
+  };
+
+  const goToExportSRP = () => {
+    sheetRef.current?.onCloseBottomSheet(() => {
+      navigate(Routes.MODAL.ROOT_MODAL_FLOW, {
+        screen: Routes.MODAL.SRP_REVEAL_QUIZ,
+        keyringId,
+      });
+    });
+  };
+
   const showRemoveHWAlert = useCallback(() => {
     Alert.alert(
       strings('accounts.remove_hardware_account'),
@@ -193,8 +196,9 @@ const AccountActions = () => {
    */
   const removeHardwareAccount = useCallback(async () => {
     if (selectedAddress) {
-      await controllers.KeyringController.removeAccount(selectedAddress as Hex);
-      await removeAccountsFromPermissions([selectedAddress]);
+      const hexSelectedAddress = toHex(selectedAddress);
+      await removeAccountsFromPermissions([hexSelectedAddress]);
+      await controllers.KeyringController.removeAccount(hexSelectedAddress);
       trackEvent(
         createEventBuilder(MetaMetricsEvents.ACCOUNT_REMOVED)
           .addProperties({
@@ -229,8 +233,9 @@ const AccountActions = () => {
    */
   const removeSnapAccount = useCallback(async () => {
     if (selectedAddress) {
-      await controllers.KeyringController.removeAccount(selectedAddress as Hex);
-      await removeAccountsFromPermissions([selectedAddress]);
+      const hexSelectedAddress = toHex(selectedAddress);
+      await removeAccountsFromPermissions([hexSelectedAddress]);
+      await controllers.KeyringController.removeAccount(hexSelectedAddress);
       trackEvent(
         createEventBuilder(MetaMetricsEvents.ACCOUNT_REMOVED)
           .addProperties({
@@ -333,13 +338,15 @@ const AccountActions = () => {
         return;
       }
 
-      await removeHardwareAccount();
+      sheetRef.current?.onCloseBottomSheet(async () => {
+        await removeHardwareAccount();
 
-      await selectFirstAccount();
+        await selectFirstAccount();
 
-      await forgetDeviceIfRequired();
+        await forgetDeviceIfRequired();
 
-      setBlockingModalVisible(false);
+        setBlockingModalVisible(false);
+      });
     }
   }, [
     blockingModalVisible,
@@ -351,7 +358,7 @@ const AccountActions = () => {
   ]);
 
   const goToEditAccountName = () => {
-    navigate('EditAccountName', { selectedAccount });
+    navigate(Routes.EDIT_ACCOUNT_NAME, { selectedAccount });
   };
 
   const isExplorerVisible = Boolean(
@@ -368,15 +375,13 @@ const AccountActions = () => {
           onPress={goToEditAccountName}
           testID={AccountActionsBottomSheetSelectorsIDs.EDIT_ACCOUNT}
         />
-        {isExplorerVisible && (
+        {isExplorerVisible && blockExplorer && (
           <AccountAction
-            actionTitle={
-              (blockExplorer &&
-                `${strings('drawer.view_in')} ${blockExplorerName}`) ||
-              strings('drawer.view_in_etherscan')
-            }
+            actionTitle={`${strings('drawer.view_in')} ${
+              blockExplorer.blockExplorerName
+            }`}
             iconName={IconName.Export}
-            onPress={viewInEtherscan}
+            onPress={viewOnBlockExplorer}
             testID={AccountActionsBottomSheetSelectorsIDs.VIEW_ETHERSCAN}
           />
         )}
@@ -386,12 +391,24 @@ const AccountActions = () => {
           onPress={onShare}
           testID={AccountActionsBottomSheetSelectorsIDs.SHARE_ADDRESS}
         />
-        <AccountAction
-          actionTitle={strings('account_details.show_private_key')}
-          iconName={IconName.Key}
-          onPress={goToExportPrivateKey}
-          testID={AccountActionsBottomSheetSelectorsIDs.SHOW_PRIVATE_KEY}
-        />
+        {selectedAddress && isEvmAccountType(selectedAccount.type) && (
+          <AccountAction
+            actionTitle={strings('account_details.show_private_key')}
+            iconName={IconName.Key}
+            onPress={goToExportPrivateKey}
+            testID={AccountActionsBottomSheetSelectorsIDs.SHOW_PRIVATE_KEY}
+          />
+        )}
+        {selectedAddress && isHDOrFirstPartySnapAccount(selectedAccount) && (
+          <AccountAction
+            actionTitle={strings('accounts.reveal_secret_recovery_phrase')}
+            iconName={IconName.Key}
+            onPress={goToExportSRP}
+            testID={
+              AccountActionsBottomSheetSelectorsIDs.SHOW_SECRET_RECOVERY_PHRASE
+            }
+          />
+        )}
         {selectedAddress && isHardwareAccount(selectedAddress) && (
           <AccountAction
             actionTitle={strings('accounts.remove_hardware_account')}
@@ -414,6 +431,17 @@ const AccountActions = () => {
           )
           ///: END:ONLY_INCLUDE_IF
         }
+        {networkSupporting7702Present &&
+          !isHardwareAccount(selectedAddress) && (
+            <AccountAction
+              actionTitle={strings('account_actions.switch_to_smart_account')}
+              iconName={IconName.SwapHorizontal}
+              onPress={goToSwitchAccountType}
+              testID={
+                AccountActionsBottomSheetSelectorsIDs.SWITCH_TO_SMART_ACCOUNT
+              }
+            />
+          )}
       </View>
       <BlockingActionModal
         modalVisible={blockingModalVisible}

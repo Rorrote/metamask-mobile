@@ -1,138 +1,117 @@
 import { CaipChainId } from '@metamask/utils';
 import {
-  isBtcMainnetAddress,
-  isBtcTestnetAddress,
-  isSolanaAddress,
-} from './utils';
-import { MultichainNetworks } from '@metamask/assets-controllers';
-import { BtcAccountType, SolAccountType } from '@metamask/keyring-api';
-import BTC from '../../images/bitcoin-logo.png';
-import SOL from '../../images/solana-logo.png';
+  BtcAccountType,
+  BtcScope,
+  SolAccountType,
+  SolScope,
+} from '@metamask/keyring-api';
+import imageIcons from '../../images/image-icons';
+import { MultichainBlockExplorerFormatUrls } from './networks';
 
 // Image imports for React Native rendering
 export const MULTICHAIN_TOKEN_IMAGES = {
-  [MultichainNetworks.Bitcoin]: BTC,
-  [MultichainNetworks.Solana]: SOL,
-  [MultichainNetworks.BitcoinTestnet]: BTC,
-  [MultichainNetworks.SolanaDevnet]: SOL,
-  [MultichainNetworks.SolanaTestnet]: SOL,
+  [BtcScope.Mainnet]: imageIcons.BTC,
+  [BtcScope.Testnet]: imageIcons['BTC-TESTNET'],
+  [BtcScope.Testnet4]: imageIcons['BTC-TESTNET'],
+  [BtcScope.Signet]: imageIcons['BTC-SIGNET'],
+  [BtcScope.Regtest]: imageIcons['BTC-TESTNET'],
+  [SolScope.Mainnet]: imageIcons.SOLANA,
+  [SolScope.Devnet]: imageIcons.SOLANA,
+  [SolScope.Testnet]: imageIcons.SOLANA,
 } as const;
 
-export interface ProviderConfigWithImageUrl {
-  rpcUrl?: string;
-  type: string;
-  ticker: string;
-  decimal: number;
-  nickname?: string;
-  rpcPrefs?: { blockExplorerUrl?: string };
-  id?: string;
-}
-
-export type MultichainProviderConfig = ProviderConfigWithImageUrl & {
-  nickname: string;
-  chainId: CaipChainId;
-  // NOTE: For now we use a callback to check if the address is compatible with
-  // the given network or not
-  isAddressCompatible: (address: string) => boolean;
-};
+export const MULTICHAIN_NETWORK_BLOCK_EXPLORER_FORMAT_URLS_MAP: Record<
+  CaipChainId,
+  MultichainBlockExplorerFormatUrls
+> = {
+  [BtcScope.Mainnet]: {
+    url: 'https://mempool.space/',
+    address: 'https://mempool.space/address/{address}',
+    transaction: 'https://mempool.space/tx/{txId}',
+  },
+  [BtcScope.Testnet]: {
+    url: 'https://mempool.space/',
+    address: 'https://mempool.space/testnet/address/{address}',
+    transaction: 'https://mempool.space/testnet/tx/{txId}',
+  },
+  [BtcScope.Testnet4]: {
+    url: 'https://mempool.space/',
+    address: 'https://mempool.space/testnet4/address/{address}',
+    transaction: 'https://mempool.space/testnet4/tx/{txId}',
+  },
+  [BtcScope.Signet]: {
+    url: 'https://mutinynet.com/',
+    address: 'https://mutinynet.com/address/{address}',
+    transaction: 'https://mutinynet.com/tx/{txId}',
+  },
+  [SolScope.Mainnet]: {
+    url: 'https://solscan.io',
+    address: 'https://solscan.io/account/{address}',
+    transaction: 'https://solscan.io/tx/{txId}',
+  },
+  [SolScope.Devnet]: {
+    url: 'https://solscan.io',
+    address: 'https://solscan.io/account/{address}?cluster=devnet',
+    transaction: 'https://solscan.io/tx/{txId}?cluster=devnet',
+  },
+  [SolScope.Testnet]: {
+    url: 'https://solscan.io',
+    address: 'https://solscan.io/account/{address}?cluster=testnet',
+    transaction: 'https://solscan.io/tx/{txId}?cluster=testnet',
+  },
+} as const;
 
 export const MULTICHAIN_ACCOUNT_TYPE_TO_MAINNET = {
-  [BtcAccountType.P2wpkh]: MultichainNetworks.Bitcoin,
-  [SolAccountType.DataAccount]: MultichainNetworks.Solana,
+  [BtcAccountType.P2pkh]: BtcScope.Mainnet,
+  [BtcAccountType.P2sh]: BtcScope.Mainnet,
+  [BtcAccountType.P2wpkh]: BtcScope.Mainnet,
+  [BtcAccountType.P2tr]: BtcScope.Mainnet,
+  [SolAccountType.DataAccount]: SolScope.Mainnet,
 } as const;
 
-export const MULTICHAIN_NETWORK_BLOCK_EXPLORER_URL_MAP = {
-  [MultichainNetworks.Bitcoin]: 'https://blockstream.info/address',
-  [MultichainNetworks.BitcoinTestnet]:
-    'https://blockstream.info/testnet/address',
-  [MultichainNetworks.Solana]: 'https://explorer.solana.com/',
-  [MultichainNetworks.SolanaDevnet]:
-    'https://explorer.solana.com/?cluster=devnet',
-  [MultichainNetworks.SolanaTestnet]:
-    'https://explorer.solana.com/?cluster=testnet',
-} as const;
-
-export const MULTICHAIN_PROVIDER_CONFIGS: Record<
-  CaipChainId,
-  MultichainProviderConfig
-> = {
-  [MultichainNetworks.Bitcoin]: {
-    chainId: MultichainNetworks.Bitcoin,
-    rpcUrl: '', // not used
-    ticker: 'BTC',
-    nickname: 'Bitcoin',
-    id: 'btc-mainnet',
-    type: 'rpc',
-    decimal: 8,
-    rpcPrefs: {
-      blockExplorerUrl:
-        MULTICHAIN_NETWORK_BLOCK_EXPLORER_URL_MAP[MultichainNetworks.Bitcoin],
-    },
-    isAddressCompatible: isBtcMainnetAddress,
-  },
-  [MultichainNetworks.BitcoinTestnet]: {
-    chainId: MultichainNetworks.BitcoinTestnet,
-    rpcUrl: '', // not used
-    ticker: 'BTC',
-    nickname: 'Bitcoin (testnet)',
-    id: 'btc-testnet',
-    type: 'rpc',
-    decimal: 8,
-    rpcPrefs: {
-      blockExplorerUrl:
-        MULTICHAIN_NETWORK_BLOCK_EXPLORER_URL_MAP[
-          MultichainNetworks.BitcoinTestnet
-        ],
-    },
-    isAddressCompatible: isBtcTestnetAddress,
-  },
-  /**
-   * Solana
-   */
-  [MultichainNetworks.Solana]: {
-    chainId: MultichainNetworks.Solana,
-    rpcUrl: '', // not used
-    ticker: 'SOL',
-    nickname: 'Solana',
-    id: 'solana-mainnet',
-    type: 'rpc',
-    decimal: 9,
-    rpcPrefs: {
-      blockExplorerUrl:
-        MULTICHAIN_NETWORK_BLOCK_EXPLORER_URL_MAP[MultichainNetworks.Solana],
-    },
-    isAddressCompatible: isSolanaAddress,
-  },
-  [MultichainNetworks.SolanaDevnet]: {
-    chainId: MultichainNetworks.SolanaDevnet,
-    rpcUrl: '', // not used
-    ticker: 'SOL',
-    nickname: 'Solana (devnet)',
-    id: 'solana-devnet',
-    type: 'rpc',
-    decimal: 9,
-    rpcPrefs: {
-      blockExplorerUrl:
-        MULTICHAIN_NETWORK_BLOCK_EXPLORER_URL_MAP[
-          MultichainNetworks.SolanaDevnet
-        ],
-    },
-    isAddressCompatible: isSolanaAddress,
-  },
-  [MultichainNetworks.SolanaTestnet]: {
-    chainId: MultichainNetworks.SolanaTestnet,
-    rpcUrl: '', // not used
-    ticker: 'SOL',
-    nickname: 'Solana (testnet)',
-    id: 'solana-testnet',
-    type: 'rpc',
-    decimal: 9,
-    rpcPrefs: {
-      blockExplorerUrl:
-        MULTICHAIN_NETWORK_BLOCK_EXPLORER_URL_MAP[
-          MultichainNetworks.SolanaTestnet
-        ],
-    },
-    isAddressCompatible: isSolanaAddress,
-  },
-};
+export const PRICE_API_CURRENCIES = [
+  'aud',
+  'hkd',
+  'sgd',
+  'idr',
+  'inr',
+  'nzd',
+  'php',
+  'btc',
+  'cad',
+  'eur',
+  'gbp',
+  'jpy',
+  'ltc',
+  'rub',
+  'uah',
+  'usd',
+  'xlm',
+  'xrp',
+  'sek',
+  'aed',
+  'ars',
+  'bch',
+  'bnb',
+  'brl',
+  'clp',
+  'cny',
+  'czk',
+  'dkk',
+  'chf',
+  'dot',
+  'eos',
+  'eth',
+  'gel',
+  'huf',
+  'ils',
+  'krw',
+  'mxn',
+  'myr',
+  'ngn',
+  'nok',
+  'pln',
+  'thb',
+  'try',
+  'zar',
+];

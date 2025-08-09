@@ -1,18 +1,21 @@
+import { CHAIN_IDS } from '@metamask/transaction-controller';
+
 import { NameType } from '../../UI/Name/Name.types';
 import useDisplayName, { DisplayNameVariant } from './useDisplayName';
 import { useFirstPartyContractNames } from './useFirstPartyContractNames';
 import { useERC20Tokens } from './useERC20Tokens';
 import { useWatchedNFTNames } from './useWatchedNFTNames';
 import { useNftNames } from './useNftName';
-import { CHAIN_IDS } from '@metamask/transaction-controller';
+import { useInternalAccountNames } from './useInternalAccountNames';
 
 const UNKNOWN_ADDRESS_CHECKSUMMED =
   '0x299007B3F9E23B8d432D5f545F8a4a2B3E9A5B4e';
 const KNOWN_NFT_ADDRESS_CHECKSUMMED =
   '0x495f947276749Ce646f68AC8c248420045cb7b5e';
 const KNOWN_NFT_NAME_MOCK = 'Known NFT';
-const KNOWN_FIRST_PARTY_CONTRACT_NAME = 'MetaMask Pool Staking';
+const KNOWN_FIRST_PARTY_CONTRACT_NAME = 'Pool Staking';
 const KNOWN_TOKEN_LIST_NAME = 'Known Token List';
+const KNOWN_ACCOUNT_NAME = 'Account 1';
 
 jest.mock('./useWatchedNFTNames', () => ({
   useWatchedNFTNames: jest.fn(),
@@ -25,8 +28,13 @@ jest.mock('./useFirstPartyContractNames', () => ({
 jest.mock('./useERC20Tokens', () => ({
   useERC20Tokens: jest.fn(),
 }));
+
 jest.mock('./useNftName', () => ({
   useNftNames: jest.fn(),
+}));
+
+jest.mock('./useInternalAccountNames', () => ({
+  useInternalAccountNames: jest.fn(),
 }));
 
 describe('useDisplayName', () => {
@@ -36,6 +44,7 @@ describe('useDisplayName', () => {
   );
   const mockUseERC20Tokens = jest.mocked(useERC20Tokens);
   const mockUseNFTNames = jest.mocked(useNftNames);
+  const mockUseInternalAccountNames = jest.mocked(useInternalAccountNames);
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -43,6 +52,7 @@ describe('useDisplayName', () => {
     mockUseFirstPartyContractNames.mockReturnValue([]);
     mockUseERC20Tokens.mockReturnValue([]);
     mockUseNFTNames.mockReturnValue([]);
+    mockUseInternalAccountNames.mockReturnValue([]);
   });
 
   describe('unknown address', () => {
@@ -55,6 +65,10 @@ describe('useDisplayName', () => {
 
       expect(displayName).toEqual({
         variant: DisplayNameVariant.Unknown,
+        contractDisplayName: undefined,
+        image: undefined,
+        isFirstPartyContractName: false,
+        name: undefined,
       });
     });
   });
@@ -74,6 +88,9 @@ describe('useDisplayName', () => {
       expect(displayName).toEqual({
         variant: DisplayNameVariant.Recognized,
         name: KNOWN_FIRST_PARTY_CONTRACT_NAME,
+        contractDisplayName: undefined,
+        image: undefined,
+        isFirstPartyContractName: true,
       });
     });
 
@@ -98,6 +115,9 @@ describe('useDisplayName', () => {
       expect(displayName).toEqual({
         variant: DisplayNameVariant.Recognized,
         name: KNOWN_NFT_NAME_MOCK,
+        contractDisplayName: undefined,
+        image: undefined,
+        isFirstPartyContractName: false,
       });
     });
 
@@ -125,6 +145,23 @@ describe('useDisplayName', () => {
         expect.objectContaining({
           variant: DisplayNameVariant.Recognized,
           name: KNOWN_TOKEN_LIST_NAME,
+        }),
+      );
+    });
+
+    it('returns internal account name', () => {
+      mockUseInternalAccountNames.mockReturnValue([KNOWN_ACCOUNT_NAME]);
+
+      const displayName = useDisplayName({
+        type: NameType.EthereumAddress,
+        value: KNOWN_NFT_ADDRESS_CHECKSUMMED,
+        variation: CHAIN_IDS.MAINNET,
+      });
+
+      expect(displayName).toEqual(
+        expect.objectContaining({
+          variant: DisplayNameVariant.Saved,
+          name: KNOWN_ACCOUNT_NAME,
         }),
       );
     });

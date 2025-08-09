@@ -22,6 +22,9 @@ import Text, {
   TextVariant,
 } from '../../../component-library/components/Texts/Text';
 import { useMetrics } from '../../../components/hooks/useMetrics';
+import Routes from '../../../constants/navigation/Routes';
+import { selectSeedlessOnboardingLoginFlow } from '../../../selectors/seedlessOnboardingController';
+import { RootState } from '../../../reducers';
 
 const BROWSER_ROUTE = 'BrowserView';
 
@@ -47,25 +50,24 @@ const BackupAlert = ({ navigation, onDismiss }: BackupAlertI) => {
   const [isVisible, setIsVisible] = useState(true);
 
   const { seedphraseBackedUp, backUpSeedphraseVisible } = useSelector(
-    // TODO: Replace "any" with type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (state: any) => state.user,
+    (state: RootState) => state.user,
   );
 
-  // TODO: Replace "any" with type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onboardingWizardStep = useSelector((state: any) => state.wizard.step);
   const dispatch = useDispatch();
 
   const currentRouteName = findRouteNameFromNavigatorState(
     navigation.dangerouslyGetState().routes,
   );
 
+  const isSeedlessOnboardingLoginFlow = useSelector(
+    selectSeedlessOnboardingLoginFlow,
+  );
+
   useEffect(() => {
     const isInBrowserView = currentRouteName === BROWSER_ROUTE;
     const blockedView =
-      BLOCKED_LIST.find((path) => currentRouteName.includes(path)) ||
-      currentRouteName === 'SetPasswordFlow';
+      BLOCKED_LIST.find((path) => currentRouteName?.includes(path)) ??
+      currentRouteName === Routes.SET_PASSWORD_FLOW.ROOT;
 
     setInBrowserView(isInBrowserView);
     setInBlockedView(!!blockedView);
@@ -73,8 +75,9 @@ const BackupAlert = ({ navigation, onDismiss }: BackupAlertI) => {
 
   const goToBackupFlow = () => {
     setIsVisible(false);
-    navigation.navigate('SetPasswordFlow', {
-      screen: 'AccountBackupStep1',
+    navigation.navigate(Routes.SET_PASSWORD_FLOW.ROOT, {
+      screen: Routes.SET_PASSWORD_FLOW.MANUAL_BACKUP_STEP_1,
+      params: { backupFlow: true },
     });
 
     trackEvent(
@@ -106,10 +109,9 @@ const BackupAlert = ({ navigation, onDismiss }: BackupAlertI) => {
     seedphraseBackedUp ||
     inBlockedView ||
     !backUpSeedphraseVisible ||
-    onboardingWizardStep !== 0 ||
     !isVisible;
 
-  return shouldNotRenderAlert ? null : (
+  return shouldNotRenderAlert || isSeedlessOnboardingLoginFlow ? null : (
     <ElevatedView
       elevation={99}
       style={[

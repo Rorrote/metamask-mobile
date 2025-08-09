@@ -1,6 +1,5 @@
-import { ControllerMessenger } from '../Engine';
-import { SnapControllerHandleRequestAction } from '../Engine/controllers/SnapController/constants';
-import { HandleSnapRequestArgs } from './types';
+import type { BaseControllerMessenger } from '../Engine';
+import type { HandleSnapRequestArgs } from './types';
 
 /**
  * Passes a JSON-RPC request object to the SnapController for execution.
@@ -13,11 +12,8 @@ import { HandleSnapRequestArgs } from './types';
  * @returns The result of the JSON-RPC request.
  */
 export async function handleSnapRequest(
-  controllerMessenger: ControllerMessenger,
+  controllerMessenger: BaseControllerMessenger,
   args: HandleSnapRequestArgs,
 ) {
-  return await controllerMessenger.call(
-    SnapControllerHandleRequestAction,
-    args,
-  );
+  return await controllerMessenger.call('SnapController:handleRequest', args);
 }

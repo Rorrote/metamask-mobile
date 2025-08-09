@@ -13,7 +13,7 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
   style={
     {
       "backgroundColor": "#ffffff",
-      "borderColor": "#848c96",
+      "borderColor": "#b7bbc8",
       "borderRadius": 4,
       "borderWidth": 1,
       "padding": 16,
@@ -35,7 +35,7 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
       style={
         {
           "backgroundColor": "#ffffff",
-          "borderRadius": 16,
+          "borderRadius": 8,
           "height": 32,
           "marginRight": 16,
           "overflow": "hidden",
@@ -56,7 +56,9 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
               "height": 32,
               "width": 32,
             },
-            undefined,
+            {
+              "borderRadius": 8,
+            },
           ]
         }
       >
@@ -186,10 +188,9 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
         numberOfLines={1}
         style={
           {
-            "color": "#141618",
-            "fontFamily": "EuclidCircularB-Regular",
+            "color": "#121314",
+            "fontFamily": "Geist Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
           }
@@ -203,12 +204,11 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
         numberOfLines={1}
         style={
           {
-            "color": "#6a737d",
-            "fontFamily": "EuclidCircularB-Regular",
-            "fontSize": 14,
-            "fontWeight": "400",
+            "color": "#686e7d",
+            "fontFamily": "Geist Regular",
+            "fontSize": 16,
             "letterSpacing": 0,
-            "lineHeight": 22,
+            "lineHeight": 24,
           }
         }
       >
@@ -219,12 +219,11 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
         numberOfLines={1}
         style={
           {
-            "color": "#6a737d",
-            "fontFamily": "EuclidCircularB-Regular",
-            "fontSize": 14,
-            "fontWeight": "400",
+            "color": "#686e7d",
+            "fontFamily": "Geist Regular",
+            "fontSize": 16,
             "letterSpacing": 0,
-            "lineHeight": 22,
+            "lineHeight": 24,
           }
         }
       >
@@ -234,7 +233,7 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
         style={
           {
             "backgroundColor": "#ffffff",
-            "borderColor": "#848c96",
+            "borderColor": "#b7bbc8",
             "borderRadius": 10,
             "borderWidth": 1,
             "height": 24,
@@ -248,12 +247,11 @@ exports[`Cell should render CellDisplay given the type Display 1`] = `
           accessibilityRole="text"
           style={
             {
-              "color": "#141618",
-              "fontFamily": "EuclidCircularB-Regular",
-              "fontSize": 14,
-              "fontWeight": "400",
+              "color": "#121314",
+              "fontFamily": "Geist Regular",
+              "fontSize": 16,
               "letterSpacing": 0,
-              "lineHeight": 22,
+              "lineHeight": 24,
             }
           }
         >
@@ -313,7 +311,7 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
             {
               "alignItems": "center",
               "backgroundColor": "#ffffff",
-              "borderColor": "#141618",
+              "borderColor": "#121314",
               "borderRadius": 4,
               "borderWidth": 2,
               "height": 20,
@@ -344,7 +342,7 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
           style={
             {
               "backgroundColor": "#ffffff",
-              "borderRadius": 16,
+              "borderRadius": 8,
               "height": 32,
               "marginRight": 16,
               "overflow": "hidden",
@@ -365,7 +363,9 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
                   "height": 32,
                   "width": 32,
                 },
-                undefined,
+                {
+                  "borderRadius": 8,
+                },
               ]
             }
           >
@@ -495,10 +495,9 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
             numberOfLines={1}
             style={
               {
-                "color": "#141618",
-                "fontFamily": "EuclidCircularB-Regular",
+                "color": "#121314",
+                "fontFamily": "Geist Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
               }
@@ -512,12 +511,11 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
             numberOfLines={1}
             style={
               {
-                "color": "#6a737d",
-                "fontFamily": "EuclidCircularB-Regular",
-                "fontSize": 14,
-                "fontWeight": "400",
+                "color": "#686e7d",
+                "fontFamily": "Geist Regular",
+                "fontSize": 16,
                 "letterSpacing": 0,
-                "lineHeight": 22,
+                "lineHeight": 24,
               }
             }
           >
@@ -528,12 +526,11 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
             numberOfLines={1}
             style={
               {
-                "color": "#6a737d",
-                "fontFamily": "EuclidCircularB-Regular",
-                "fontSize": 14,
-                "fontWeight": "400",
+                "color": "#686e7d",
+                "fontFamily": "Geist Regular",
+                "fontSize": 16,
                 "letterSpacing": 0,
-                "lineHeight": 22,
+                "lineHeight": 24,
               }
             }
           >
@@ -543,7 +540,7 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
             style={
               {
                 "backgroundColor": "#ffffff",
-                "borderColor": "#848c96",
+                "borderColor": "#b7bbc8",
                 "borderRadius": 10,
                 "borderWidth": 1,
                 "height": 24,
@@ -557,12 +554,11 @@ exports[`Cell should render CellMultiSelect given the type MultiSelect 1`] = `
               accessibilityRole="text"
               style={
                 {
-                  "color": "#141618",
-                  "fontFamily": "EuclidCircularB-Regular",
-                  "fontSize": 14,
-                  "fontWeight": "400",
+                  "color": "#121314",
+                  "fontFamily": "Geist Regular",
+                  "fontSize": 16,
                   "letterSpacing": 0,
-                  "lineHeight": 22,
+                  "lineHeight": 24,
                 }
               }
             >
@@ -617,7 +613,7 @@ exports[`Cell should render CellSelect given the type Select 1`] = `
           style={
             {
               "backgroundColor": "#ffffff",
-              "borderRadius": 16,
+              "borderRadius": 8,
               "height": 32,
               "marginRight": 16,
               "overflow": "hidden",
@@ -638,7 +634,9 @@ exports[`Cell should render CellSelect given the type Select 1`] = `
                   "height": 32,
                   "width": 32,
                 },
-                undefined,
+                {
+                  "borderRadius": 8,
+                },
               ]
             }
           >
@@ -768,10 +766,9 @@ exports[`Cell should render CellSelect given the type Select 1`] = `
             numberOfLines={1}
             style={
               {
-                "color": "#141618",
-                "fontFamily": "EuclidCircularB-Regular",
+                "color": "#121314",
+                "fontFamily": "Geist Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
               }
@@ -785,12 +782,11 @@ exports[`Cell should render CellSelect given the type Select 1`] = `
             numberOfLines={1}
             style={
               {
-                "color": "#6a737d",
-                "fontFamily": "EuclidCircularB-Regular",
-                "fontSize": 14,
-                "fontWeight": "400",
+                "color": "#686e7d",
+                "fontFamily": "Geist Regular",
+                "fontSize": 16,
                 "letterSpacing": 0,
-                "lineHeight": 22,
+                "lineHeight": 24,
               }
             }
           >
@@ -801,12 +797,11 @@ exports[`Cell should render CellSelect given the type Select 1`] = `
             numberOfLines={1}
             style={
               {
-                "color": "#6a737d",
-                "fontFamily": "EuclidCircularB-Regular",
-                "fontSize": 14,
-                "fontWeight": "400",
+                "color": "#686e7d",
+                "fontFamily": "Geist Regular",
+                "fontSize": 16,
                 "letterSpacing": 0,
-                "lineHeight": 22,
+                "lineHeight": 24,
               }
             }
           >
@@ -816,7 +811,7 @@ exports[`Cell should render CellSelect given the type Select 1`] = `
             style={
               {
                 "backgroundColor": "#ffffff",
-                "borderColor": "#848c96",
+                "borderColor": "#b7bbc8",
                 "borderRadius": 10,
                 "borderWidth": 1,
                 "height": 24,
@@ -830,12 +825,11 @@ exports[`Cell should render CellSelect given the type Select 1`] = `
               accessibilityRole="text"
               style={
                 {
-                  "color": "#141618",
-                  "fontFamily": "EuclidCircularB-Regular",
-                  "fontSize": 14,
-                  "fontWeight": "400",
+                  "color": "#121314",
+                  "fontFamily": "Geist Regular",
+                  "fontSize": 16,
                   "letterSpacing": 0,
-                  "lineHeight": 22,
+                  "lineHeight": 24,
                 }
               }
             >

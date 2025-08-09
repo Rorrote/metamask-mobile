@@ -15,9 +15,11 @@ import StyledButton from '../../../UI/StyledButton';
 import { selectProviderConfig } from '../../../../selectors/networkController';
 import generateTestId from '../../../../../wdio/utils/generateTestId';
 import {
+  ACCOUNT_SELECTOR_FORGET_BUTTON,
   ACCOUNT_SELECTOR_NEXT_BUTTON,
   ACCOUNT_SELECTOR_PREVIOUS_BUTTON,
 } from '../../../../../wdio/screen-objects/testIDs/Components/AccountSelector.testIds';
+import { toFormattedAddress } from '../../../../util/address';
 
 interface ISelectQRAccountsProps {
   accounts: IAccount[];
@@ -54,11 +56,13 @@ const AccountSelector = (props: ISelectQRAccountsProps) => {
 
   const formattedAccounts: IAccount[] = useMemo(() => {
     const selectedAccountsSet = new Set<string>(
-      selectedAccounts.map((address) => address.toLowerCase()),
+      selectedAccounts.map((address) => toFormattedAddress(address)),
     );
     return accounts.map((account) => {
       const checked = checkedAccounts.has(account.index);
-      const selected = selectedAccountsSet.has(account.address.toLowerCase());
+      const selected = selectedAccountsSet.has(
+        toFormattedAddress(account.address),
+      );
       return {
         ...account,
         checked: checked || selected,
@@ -149,6 +153,7 @@ const AccountSelector = (props: ISelectQRAccountsProps) => {
           type={'transparent-blue'}
           onPress={onForget}
           containerStyle={[styles.button]}
+          {...generateTestId(Platform, ACCOUNT_SELECTOR_FORGET_BUTTON)}
         >
           {strings('account_selector.forget')}
         </StyledButton>

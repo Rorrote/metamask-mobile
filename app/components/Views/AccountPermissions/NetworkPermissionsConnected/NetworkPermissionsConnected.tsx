@@ -6,17 +6,15 @@ import { useNavigation } from '@react-navigation/native';
 
 // External dependencies.
 import { strings } from '../../../../../locales/i18n';
-import {
-  getDecimalChainId,
-  getNetworkImageSource,
-} from '../../../../util/networks';
+import { getNetworkImageSource } from '../../../../util/networks';
 import { AccountPermissionsScreens } from '../AccountPermissions.types';
 import { MetaMetricsEvents } from '../../../../core/Analytics';
 import Routes from '../../../../constants/navigation/Routes';
 import {
   selectProviderConfig,
   ProviderConfig,
-  selectNetworkConfigurations,
+  selectEvmChainId,
+  selectEvmNetworkConfigurationsByChainId,
 } from '../../../../selectors/networkController';
 import {
   IconColor,
@@ -26,9 +24,6 @@ import ButtonIcon, {
   ButtonIconSizes,
 } from '../../../../component-library/components/Buttons/ButtonIcon';
 import NetworkSelectorList from '../../../../components/UI/NetworkSelectorList/NetworkSelectorList';
-import Engine from '../../../../core/Engine';
-import { PermissionKeys } from '../../../../core/Permissions/specifications';
-import { CaveatTypes } from '../../../../core/Permissions/constants';
 import Logger from '../../../../util/Logger';
 
 // Internal dependencies.
@@ -49,7 +44,12 @@ import Button, {
 } from '../../../../component-library/components/Buttons/Button';
 import { NetworkNonPemittedBottomSheetSelectorsIDs } from '../../../../../e2e/selectors/Network/NetworkNonPemittedBottomSheet.selectors';
 import { handleNetworkSwitch } from '../../../../util/networks/handleNetworkSwitch';
+import { getCaip25Caveat } from '../../../../core/Permissions';
+import { getPermittedEthChainIds } from '@metamask/chain-agnostic-permission';
+import { toHex } from '@metamask/controller-utils';
+import { parseCaipChainId } from '@metamask/utils';
 
+// Needs to be updated to handle non-evm
 const NetworkPermissionsConnected = ({
   onSetPermissionsScreen,
   onDismissSheet,
@@ -60,43 +60,41 @@ const NetworkPermissionsConnected = ({
   const { trackEvent, createEventBuilder } = useMetrics();
 
   const providerConfig: ProviderConfig = useSelector(selectProviderConfig);
+  const evmChainId = useSelector(selectEvmChainId);
+  const evmCaipChainId = `eip155:${parseInt(evmChainId, 16)}`;
 
-  const networkConfigurations = useSelector(selectNetworkConfigurations);
+  const networkConfigurations = useSelector(
+    selectEvmNetworkConfigurationsByChainId,
+  );
 
   // Get permitted chain IDs
   const getPermittedChainIds = () => {
     try {
-      const caveat = Engine.context.PermissionController.getCaveat(
-        hostname,
-        PermissionKeys.permittedChains,
-        CaveatTypes.restrictNetworkSwitching,
-      );
-      if (Array.isArray(caveat?.value)) {
-        return caveat.value.filter(
-          (item): item is string => typeof item === 'string',
-        );
+      const caveat = getCaip25Caveat(hostname);
+      if (!caveat) {
+        return [];
       }
+      return getPermittedEthChainIds(caveat.value);
     } catch (e) {
       Logger.error(e as Error, 'Error getting permitted chains caveat');
     }
     // If no permitted chains found, default to current chain
-    return providerConfig?.chainId ? [providerConfig.chainId] : [];
+    return evmChainId ? [evmChainId] : [];
   };
 
   const permittedChainIds = getPermittedChainIds();
 
   // Filter networks to only show permitted ones, excluding the active network
   const networks = Object.entries(networkConfigurations)
-    .filter(([key]) => permittedChainIds.includes(key))
+    .filter(([key]) => permittedChainIds.includes(toHex(key)))
     .map(([key, network]) => ({
       id: key,
       name: network.name,
-      rpcUrl: network.rpcEndpoints[network.defaultRpcEndpointIndex].url,
       isSelected: false,
-      //@ts-expect-error - The utils/network file is still JS and this function expects a networkType, and should be optional
       imageSource: getNetworkImageSource({
-        chainId: network?.chainId,
+        chainId: network.chainId,
       }),
+      caipChainId: `eip155:${parseInt(network.chainId, 16)}` as const,
     }));
 
   return (
@@ -130,21 +128,23 @@ const NetworkPermissionsConnected = ({
       <View style={styles.networkSelectorListContainer}>
         <NetworkSelectorList
           networks={networks}
-          onSelectNetwork={(chainId) => {
-            if (chainId === providerConfig?.chainId) {
+          onSelectNetwork={(onSelectChainId) => {
+            if (onSelectChainId === evmCaipChainId) {
               onDismissSheet();
               return;
             }
 
-            const theNetworkName = handleNetworkSwitch(
-              getDecimalChainId(chainId),
-            );
+            const { reference } = parseCaipChainId(onSelectChainId);
+
+            // This helper needs to work with caipChainIds so that this component
+            // can be updated to work with non-evm networks
+            const theNetworkName = handleNetworkSwitch(reference);
 
             if (theNetworkName) {
               trackEvent(
                 createEventBuilder(MetaMetricsEvents.NETWORK_SWITCHED)
                   .addProperties({
-                    chain_id: getDecimalChainId(chainId),
+                    chain_id: reference,
                     from_network: providerConfig?.nickname || theNetworkName,
                     to_network: theNetworkName,
                   })
